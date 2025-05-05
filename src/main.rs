@@ -1,10 +1,9 @@
 use gemini::{
     render::{pixels_backend::PixelsRenderer, Renderer},
     ui::{
-        button::Button,
-        color::{Color, BLACK, BLUE, GREEN, RED, WHITE},
-        tab::Tab,
-        Widget,
+        canvas::Canvas,
+        color::{Color, BLACK, RED},
+        Hoverable as _, Widget,
     },
 };
 use log::info;
@@ -35,16 +34,9 @@ fn main() {
     // === Create Renderer ===
     let mut renderer = PixelsRenderer::new(pixels);
 
-    // === Create Buttons ===
-    let save_button = Button::new(90, 30);
-    save_button
-        .borrow_mut()
-        .set_x(25)
-        .set_y(25)
-        .set_radius(12)
-        .set_color(RED);
-
-    let mut buttons = vec![save_button];
+    // === Create Canvas ===
+    let mut cnv = Canvas::new(256, 256);
+    let cnv = cnv.set_hover_color(RED).set_gridlines(8);
 
     // === Event Loop ===
     let mut cursor_position = PhysicalPosition::new(0.0, 0.0);
@@ -57,9 +49,9 @@ fn main() {
                         WindowEvent::CloseRequested => target.exit(),
                         WindowEvent::RedrawRequested => {
                             renderer.clear();
-                            for button in &buttons {
-                                renderer.draw_widget(&*button.borrow());
-                            }
+
+                            renderer.draw_canvas(&cnv);
+
                             renderer.present();
                         }
                         // WindowEvent::ActivationTokenDone { serial, token } => todo!(),
@@ -77,16 +69,13 @@ fn main() {
                             cursor_position = position;
 
                             let mut redraw_needed = false;
-                            for button in &mut buttons {
-                                let previous_hover_state = button.borrow().hovered;
 
-                                button
-                                    .borrow_mut()
-                                    .update_hover_state(position.x as u32, position.y as u32);
+                            let previous_hover_state = cnv.hovered;
 
-                                if previous_hover_state != button.borrow().hovered {
-                                    redraw_needed = true;
-                                }
+                            cnv.update_hover_state(position.x as u32, position.y as u32);
+
+                            if previous_hover_state != cnv.hovered {
+                                redraw_needed = true;
                             }
 
                             if redraw_needed {
