@@ -6,7 +6,7 @@
 //!
 //! You can implement this trait for any rendering system, and the UI framework will use it to display components consistently across different platforms and backends.
 
-use crate::ui::Widget;
+use crate::ui::{canvas::Canvas, color::Color, Widget};
 
 pub mod pixels_backend;
 
@@ -17,27 +17,10 @@ pub mod pixels_backend;
 ///
 /// This abstraction allows the UI framework to support multiple
 /// rendering backends, such as `pixels`, `wgpu`, or software.
-///
-/// # Example
-/// ```rust
-/// struct MyRenderer;
-///
-/// impl Renderer for MyRenderer {
-///     fn clear(&mut self) {
-///         // clear the screen
-///     }
-///
-///     fn draw_widget<T: Widget>(&mut self, widget: T) {
-///         // render the widget
-///     }
-///
-///     fn present(&mut self) {
-///         // present to screen
-///     }
-/// }
 /// ```
 pub trait Renderer {
     fn clear(&mut self);
-    fn draw_widget<T: Widget>(&mut self, widget: &T);
+    fn draw_canvas(&mut self, canvas: &Canvas);
+    fn draw_widget<T: Widget>(&mut self, widget: &T, color: Color);
     fn present(&mut self);
 }

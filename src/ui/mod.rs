@@ -9,8 +9,8 @@
 use color::Color;
 
 pub mod button;
+pub mod canvas;
 pub mod color;
-pub mod tab;
 
 /// The main entry point for building and managing the UI tree.
 ///
@@ -26,6 +26,14 @@ pub mod tab;
 /// ```
 pub struct UI {}
 
+/// A trait representing a basic rectangular UI component.
+///
+/// Types that implement `Widget` can define position, size, corner radius,
+/// fill color, and an optional label. Widgets are the fundamental building
+/// blocks of the UI layout system and are intended to be drawn by a `Renderer`.
+///
+/// This trait includes fluent-style setters for convenient method chaining.
+///
 pub trait Widget {
     fn pos(&self) -> (u32, u32);
     fn pos_mut(&mut self) -> &mut (u32, u32);
@@ -37,12 +45,8 @@ pub trait Widget {
     fn radius_mut(&mut self) -> &mut u32;
     fn label(&self) -> &Option<String>;
     fn label_mut(&mut self) -> &mut Option<String>;
-    fn hover_color(&self) -> &Option<Color>;
-    fn hover_color_mut(&mut self) -> &mut Option<Color>;
     fn color(&self) -> &Color;
     fn color_mut(&mut self) -> &mut Color;
-    fn hovered(&self) -> bool;
-    fn hovered_mut(&mut self) -> &mut bool;
     fn set_label(&mut self, label: &str) -> &mut Self {
         *self.label_mut() = Some(label.into());
         self
@@ -67,12 +71,26 @@ pub trait Widget {
         *self.radius_mut() = radius;
         self
     }
-    fn set_hover_color(&mut self, color: Color) -> &mut Self {
-        *self.hover_color_mut() = Some(color);
-        self
-    }
     fn set_color(&mut self, color: Color) -> &mut Self {
         *self.color_mut() = color;
+        self
+    }
+}
+
+/// A trait for widgets that can respond to hover state.
+///
+/// Types implementing `Hoverable` support hover detection based on mouse
+/// position, as well as optional hover-specific colors for visual feedback.
+/// This is intended to be used in event handling and rendering logic.
+///
+/// Typically used alongside the `Widget` trait.
+pub trait Hoverable: Widget {
+    fn hovered(&self) -> bool;
+    fn hovered_mut(&mut self) -> &mut bool;
+    fn hover_color(&self) -> &Option<Color>;
+    fn hover_color_mut(&mut self) -> &mut Option<Color>;
+    fn set_hover_color(&mut self, color: Color) -> &mut Self {
+        *self.hover_color_mut() = Some(color);
         self
     }
     fn update_hover_state(&mut self, mx: u32, my: u32) {
@@ -80,5 +98,4 @@ pub trait Widget {
         *self.hovered_mut() =
             mx >= x && mx <= x + self.width() && my >= y && my <= y + self.height()
     }
-    
 }
