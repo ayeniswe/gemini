@@ -35,12 +35,17 @@ impl Actionable for Hover {
                     let previous_hover_state = self.hovered;
 
                     self.update_hover_state(widget, position.x, position.y);
-
-                    if self.hovered {
-                        widget.style.color = self.hover_color
-                    }
                     
                     if previous_hover_state != self.hovered {
+                        if self.hovered {
+                            // Swap palette..we can always expect the base to be retrieved
+                            // since swap will never happen unless an intial hover took place
+                            self.base_color = widget.style.color;
+                            widget.style.color = self.hover_color;
+                        } else {
+                            widget.style.color = self.base_color;
+                        }
+
                         window.request_redraw();
                     }
                 }
