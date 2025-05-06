@@ -1,16 +1,15 @@
+use std::{cell::RefCell, rc::Rc};
+
 use gemini::{
+    action::{zoom::Zoom, Action},
     render::{pixels_backend::PixelsRenderer, Renderer},
-    ui::{
-        canvas::Canvas,
-        color::{Color, BLACK, RED},
-        Hoverable as _, Widget,
-    },
+    ui::widget::{canvas::Canvas, Widget as _},
 };
 use log::info;
 use pixels::{Pixels, SurfaceTexture};
 use winit::{
     dpi::{LogicalSize, PhysicalPosition},
-    event::{Event, WindowEvent},
+    event::{Event, MouseScrollDelta, WindowEvent},
     event_loop::EventLoop,
     window::WindowBuilder,
 };
@@ -35,8 +34,11 @@ fn main() {
     let mut renderer = PixelsRenderer::new(pixels);
 
     // === Create Canvas ===
-    let mut cnv = Canvas::new(256, 256);
-    let cnv = cnv.set_hover_color(RED).set_gridlines(8);
+    let mut cnv = Canvas::new()
+        .set_width(64)
+        .set_height(64)
+        .set_gridlines(8)
+        .on_action(Action::ZoomInOut(Zoom::new(16.0)));
 
     // === Event Loop ===
     let mut cursor_position = PhysicalPosition::new(0.0, 0.0);
@@ -48,9 +50,10 @@ fn main() {
                     match event {
                         WindowEvent::CloseRequested => target.exit(),
                         WindowEvent::RedrawRequested => {
+                            dbg!("gettin drawed");
                             renderer.clear();
 
-                            renderer.draw_canvas(&cnv);
+                            renderer.draw_widget(&cnv);
 
                             renderer.present();
                         }
@@ -68,19 +71,19 @@ fn main() {
                         WindowEvent::CursorMoved { position, .. } => {
                             cursor_position = position;
 
-                            let mut redraw_needed = false;
+                            // let mut redraw_needed = false;
 
-                            let previous_hover_state = cnv.hovered;
+                            // let previous_hover_state = cnv.hovered;
 
-                            cnv.update_hover_state(position.x as u32, position.y as u32);
+                            // cnv.update_hover_state(position.x as u32, position.y as u32);
 
-                            if previous_hover_state != cnv.hovered {
-                                redraw_needed = true;
-                            }
+                            // if previous_hover_state != cnv.hovered {
+                            //     redraw_needed = true;
+                            // }
 
-                            if redraw_needed {
-                                window.request_redraw();
-                            }
+                            // if redraw_needed {
+                            //     window.request_redraw();
+                            // }
                         }
                         // WindowEvent::CursorEntered { device_id } => todo!(),
                         // WindowEvent::CursorLeft { device_id } => todo!(),

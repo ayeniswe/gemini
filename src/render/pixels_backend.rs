@@ -1,10 +1,10 @@
 use pixels::Pixels;
 use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Rect, Transform};
 
-use crate::render::Renderer;
-use crate::ui::canvas::Canvas;
-use crate::ui::color::Color;
-use crate::ui::{Hoverable, Widget};
+use crate::{
+    render::Renderer,
+    ui::{color::Color, widget::Widget},
+};
 
 pub struct PixelsRenderer {
     pixels: Pixels,
@@ -139,23 +139,6 @@ impl PixelsRenderer {
             self.blit_on(x, y + spacing, &line);
         }
     }
-    /// Determines the appropriate color to use when rendering a widget based on its hover state.
-    ///
-    /// If the widget is currently hovered and has a custom hover color defined,
-    /// that color is returned. Otherwise, it falls back to the widget's default color.
-    fn get_hover_color<T: Hoverable>(widget: &T) -> Color {
-        // Display color
-        if widget.hovered() {
-            // Display color on hover (if applicable)
-            if let Some(color) = &widget.hover_color() {
-                *color
-            } else {
-                *widget.color()
-            }
-        } else {
-            *widget.color()
-        }
-    }
 }
 impl Renderer for PixelsRenderer {
     fn clear(&mut self) {
@@ -164,43 +147,26 @@ impl Renderer for PixelsRenderer {
             pixel.copy_from_slice(&[0, 0, 0, 255]);
         }
     }
-    fn draw_canvas(&mut self, canvas: &Canvas) {
-        let color = PixelsRenderer::get_hover_color(canvas);
-
-        self.draw_widget(canvas, color);
-
-        if let Some(grid) = &canvas.grid {
-            self.draw_gridlines(
-                canvas.pos(),
-                canvas.width,
-                canvas.height,
-                grid.spacing,
-                color,
-                1,
-            );
-        }
-    }
-    fn draw_widget<T: Widget>(&mut self, widget: &T, color: Color) {
+    fn draw_widget<T: Widget>(&mut self, widget: &T) {
         let frame_width = self.pixels.texture().width();
         let frame = self.pixels.frame_mut();
 
-        // Draw widget
-        let (widget_x, widget_y) = widget.pos();
+        // Draw widget base
         if widget.radius() > 0 {
             // Offshoot to skia for smooth draws (if needed)
             let rounded_rect = PixelsRenderer::draw_rounded_rect(
-                widget_x as f32,
-                widget_y as f32,
+                widget.x() as f32,
+                widget.y() as f32,
                 widget.width() as f32,
                 widget.height() as f32,
                 widget.radius() as f32,
-                &color,
+                &widget.color(),
             );
-            self.blit_on(widget_x, widget_y, &rounded_rect);
+            self.blit_on(widget.x(), widget.y(), &rounded_rect);
         } else {
-            let color: [u8; 4] = color.into();
-            for y in widget_y..widget_y + widget.height() {
-                for x in widget_x..widget_x + widget.width() {
+            let color: [u8; 4] = (*widget.color()).into();
+            for y in widget.y()..widget.y() + widget.height() {
+                for x in widget.x()..widget.x() + widget.width() {
                     // Row major layout follows this formula
                     let idx = ((y * frame_width + x) * 4) as usize;
                     frame[idx..idx + 4].copy_from_slice(&color);
@@ -208,6 +174,17 @@ impl Renderer for PixelsRenderer {
             }
         }
 
+        // Draw widget styling
+        if let Some(grid) = &widget.grid() {
+            self.draw_gridlines(
+                (widget.x(), widget.y()),
+                widget.width(),
+                widget.height(),
+                grid.spacing,
+                *widget.color(),
+                1,
+            );
+        }
         // (Optional) draw text later with `ab_glyph` or another crate
     }
     fn present(&mut self) {
