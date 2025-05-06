@@ -32,50 +32,38 @@ macro_rules! impl_widget {
             fn pos(&self) -> (u32, u32) {
                 self.pos
             }
-            fn pos_mut(&mut self) -> &mut (u32, u32) {
-                &mut self.pos
+            fn pos_mut(&mut self) -> (&mut u32, &mut u32) {
+                (&mut self.layout.x, &mut self.layout.y)
             }
             fn height(&self) -> u32 {
-                self.height
+                self.layout.h
             }
             fn height_mut(&mut self) -> &mut u32 {
-                &mut self.height
+                &mut self.layout.h
             }
             fn width(&self) -> u32 {
-                self.width
+                self.layout.w
             }
             fn width_mut(&mut self) -> &mut u32 {
-                &mut self.width
+                &mut self.layout.w
             }
             fn label(&self) -> &Option<String> {
-                &self.label
+                &self.text.label
             }
             fn label_mut(&mut self) -> &mut Option<String> {
-                &mut self.label
+                &mut self.text.label
             }
-            // fn hover_color(&self) -> &Option<Color> {
-            //     &self.hover_color
-            // }
-            // fn hover_color_mut(&mut self) -> &mut Option<Color> {
-            //     &mut self.hover_color
-            // }
             fn color(&self) -> &Color {
-                &self.color
+                &self.style.color
             }
             fn color_mut(&mut self) -> &mut Color {
-                &mut self.color
+                &mut self.style.color
             }
-            // fn hovered(&self) -> bool {
-            //     self.hovered
-            // }
-            // fn hovered_mut(&mut self) -> &mut bool {
-            //     &mut self.hovered
-            // }
             fn radius(&self) -> u32 {
-                self.radius
+                self.style.radius
             }
             fn radius_mut(&mut self) -> &mut u32 {
-                &mut self.radius
+                &mut self.style.radius
             }
         }
     };
@@ -115,16 +103,16 @@ macro_rules! impl_hoverable {
     ($type:ty) => {
         impl Hoverable for $type {
             fn hover_color(&self) -> &Option<Color> {
-                &self.hover_color
+                &self.hover.hover_color
             }
             fn hover_color_mut(&mut self) -> &mut Option<Color> {
-                &mut self.hover_color
+                &mut self.hover.hover_color
             }
             fn hovered(&self) -> bool {
-                self.hovered
+                self.hover.hovered
             }
             fn hovered_mut(&mut self) -> &mut bool {
-                &mut self.hovered
+                &mut self.hover.hovered
             }
         }
     };

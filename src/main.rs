@@ -35,8 +35,8 @@ fn main() {
     let mut renderer = PixelsRenderer::new(pixels);
 
     // === Create Canvas ===
-    let cnv = Canvas::new(256, 256);
-    cnv.borrow_mut().set_hover_color(RED).set_gridlines(8);
+    let mut cnv = Canvas::new(256, 256);
+    let cnv = cnv.set_hover_color(RED).set_gridlines(8);
 
     // === Event Loop ===
     let mut cursor_position = PhysicalPosition::new(0.0, 0.0);
@@ -50,7 +50,7 @@ fn main() {
                         WindowEvent::RedrawRequested => {
                             renderer.clear();
 
-                            renderer.draw_canvas(&*cnv.borrow());
+                            renderer.draw_canvas(&cnv);
 
                             renderer.present();
                         }
@@ -70,12 +70,11 @@ fn main() {
 
                             let mut redraw_needed = false;
 
-                            let previous_hover_state = cnv.borrow().hovered;
+                            let previous_hover_state = cnv.hovered;
 
-                            cnv.borrow_mut()
-                                .update_hover_state(position.x as u32, position.y as u32);
+                            cnv.update_hover_state(position.x as u32, position.y as u32);
 
-                            if previous_hover_state != cnv.borrow().hovered {
+                            if previous_hover_state != cnv.hovered {
                                 redraw_needed = true;
                             }
 

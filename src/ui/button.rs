@@ -3,9 +3,9 @@
 //! A `Button` is a rectangular interactive element with optional labeling and hover feedback.
 //! It is designed to integrate with the `Widget` trait for unified UI behavior.
 use crate::{impl_widget, ui::Widget};
-use std::{cell::RefCell, rc::Rc};
 
-use super::color::Color;
+use super::{action::hover::Hover, color::Color, layout::Layout, style::Style, text::Text};
+
 /// A clickable rectangular UI element that can display a label and reacts to hover events.
 ///
 /// The `Button` widget supports hover color customization, positional layout,
@@ -17,26 +17,25 @@ use super::color::Color;
 /// Example:
 /// ```
 /// let button = Button::new(100, 40);
-/// button.borrow_mut().set_label("Click me");
+/// let button = button.set_label("Click me");
 /// ```
 #[derive(Default, Debug, Clone)]
 pub struct Button {
-    pub label: Option<String>,
-    pub hover_color: Option<Color>,
-    pub color: Color,
-    pub hovered: bool,
-    pub pos: (u32, u32),
-    pub width: u32,
-    pub height: u32,
-    pub radius: u32,
+    pub text: Text,
+    pub hover: Hover,
+    pub style: Style,
+    pub layout: Layout,
 }
 impl Button {
-    pub fn new(width: u32, height: u32) -> Rc<RefCell<Self>> {
-        Rc::new(RefCell::new(Self {
-            height,
-            width,
+    pub fn new(width: u32, height: u32) -> Self {
+        Self {
+            layout: Layout {
+                w: width,
+                h: height,
+                ..Default::default()
+            },
             ..Default::default()
-        }))
+        }
     }
 }
 impl_widget! {Button}

@@ -11,6 +11,10 @@ use color::Color;
 pub mod button;
 pub mod canvas;
 pub mod color;
+pub mod layout;
+pub mod style;
+pub mod text;
+pub mod action;
 
 /// The main entry point for building and managing the UI tree.
 ///
@@ -36,7 +40,7 @@ pub struct UI {}
 ///
 pub trait Widget {
     fn pos(&self) -> (u32, u32);
-    fn pos_mut(&mut self) -> &mut (u32, u32);
+    fn pos_mut(&mut self) -> (&mut u32, &mut u32);
     fn height(&self) -> u32;
     fn height_mut(&mut self) -> &mut u32;
     fn width(&self) -> u32;
@@ -47,31 +51,31 @@ pub trait Widget {
     fn label_mut(&mut self) -> &mut Option<String>;
     fn color(&self) -> &Color;
     fn color_mut(&mut self) -> &mut Color;
-    fn set_label(&mut self, label: &str) -> &mut Self {
+    fn set_label(mut self, label: &str) -> Self where Self: Sized {
         *self.label_mut() = Some(label.into());
         self
     }
-    fn set_x(&mut self, x: u32) -> &mut Self {
+    fn set_x(mut self, x: u32) -> Self where Self: Sized {
         *self.pos_mut() = (x, self.pos().1);
         self
     }
-    fn set_y(&mut self, y: u32) -> &mut Self {
+    fn set_y(mut self, y: u32) -> Self where Self: Sized {
         *self.pos_mut() = (self.pos().0, y);
         self
     }
-    fn set_height(&mut self, height: u32) -> &mut Self {
+    fn set_height(mut self, height: u32) -> Self where Self: Sized {
         *self.height_mut() = height;
         self
     }
-    fn set_width(&mut self, width: u32) -> &mut Self {
+    fn set_width(mut self, width: u32) -> Self where Self: Sized {
         *self.width_mut() = width;
         self
     }
-    fn set_radius(&mut self, radius: u32) -> &mut Self {
+    fn set_radius(mut self, radius: u32) -> Self where Self: Sized {
         *self.radius_mut() = radius;
         self
     }
-    fn set_color(&mut self, color: Color) -> &mut Self {
+    fn set_color(mut self, color: Color) -> Self where Self: Sized {
         *self.color_mut() = color;
         self
     }
