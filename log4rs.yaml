@@ -4,7 +4,11 @@ appenders:
   stdout:
     kind: console
 
+loggers:
+  wgpu_core:
+    level: off
+
 root:
-  level: info
+  level: debug
   appenders:
     - stdout

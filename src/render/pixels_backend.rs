@@ -1,10 +1,13 @@
 use pixels::Pixels;
 use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Rect, Transform};
 
-use crate::render::Renderer;
-use crate::ui::canvas::Canvas;
-use crate::ui::color::Color;
-use crate::ui::{Hoverable, Widget};
+use crate::{
+    render::Renderer,
+    ui::{
+        color::Color,
+        widget::{canvas::Canvas, Widget},
+    },
+};
 
 pub struct PixelsRenderer {
     pixels: Pixels,
@@ -93,7 +96,9 @@ impl PixelsRenderer {
         }
     }
     fn draw_line(w: u32, h: u32, color: &Color) -> Pixmap {
-        let mut pixmap = Pixmap::new(w, h).unwrap();
+        // We can not render anything lower than zero
+        // since nothing will show...duhhh so we limit it to 1 minimal
+        let mut pixmap = Pixmap::new(w.max(1), h.max(1)).unwrap();
         let mut paint = Paint::default();
         paint.set_color((*color).into());
         pixmap.fill_rect(
@@ -139,23 +144,6 @@ impl PixelsRenderer {
             self.blit_on(x, y + spacing, &line);
         }
     }
-    /// Determines the appropriate color to use when rendering a widget based on its hover state.
-    ///
-    /// If the widget is currently hovered and has a custom hover color defined,
-    /// that color is returned. Otherwise, it falls back to the widget's default color.
-    fn get_hover_color<T: Hoverable>(widget: &T) -> Color {
-        // Display color
-        if widget.hovered() {
-            // Display color on hover (if applicable)
-            if let Some(color) = &widget.hover_color() {
-                *color
-            } else {
-                *widget.color()
-            }
-        } else {
-            *widget.color()
-        }
-    }
 }
 impl Renderer for PixelsRenderer {
     fn clear(&mut self) {
@@ -164,46 +152,56 @@ impl Renderer for PixelsRenderer {
             pixel.copy_from_slice(&[0, 0, 0, 255]);
         }
     }
-    fn draw_canvas(&mut self, canvas: &Canvas) {
-        let color = PixelsRenderer::get_hover_color(canvas);
+    fn draw_canvas(&mut self, widget: &Canvas) {
+        self.draw_widget(widget);
 
-        self.draw_widget(canvas, color);
+        if let Some(grid) = &mut *widget.grid.borrow_mut() {
+            let widget = widget.base();
 
-        if let Some(grid) = &canvas.grid {
+            // Draw gridlines
             self.draw_gridlines(
-                canvas.pos(),
-                canvas.width,
-                canvas.height,
-                grid.spacing,
-                color,
-                1,
+                (widget.layout.x, widget.layout.y),
+                widget.layout.w,
+                widget.layout.h,
+                grid.size,
+                widget.style.color,
+                grid.thickness,
             );
+
+            // Draw cells (thickness of gridlines are accounted for)
+            grid.resize(widget.layout.h, widget.layout.w);
+            grid.on_cell(move |_, c| {
+                self.draw_widget(c);
+            });
         }
     }
-    fn draw_widget<T: Widget>(&mut self, widget: &T, color: Color) {
+    fn draw_widget(&mut self, widget: &dyn Widget) {
         let frame_width = self.pixels.texture().width();
         let frame = self.pixels.frame_mut();
 
-        // Draw widget
-        let (widget_x, widget_y) = widget.pos();
-        if widget.radius() > 0 {
+        let widget = widget.base();
+
+        // Draw widget base
+        if widget.style.radius > 0 {
             // Offshoot to skia for smooth draws (if needed)
             let rounded_rect = PixelsRenderer::draw_rounded_rect(
-                widget_x as f32,
-                widget_y as f32,
-                widget.width() as f32,
-                widget.height() as f32,
-                widget.radius() as f32,
-                &color,
+                widget.layout.x as f32,
+                widget.layout.y as f32,
+                widget.layout.w as f32,
+                widget.layout.h as f32,
+                widget.style.radius as f32,
+                &widget.style.color,
             );
-            self.blit_on(widget_x, widget_y, &rounded_rect);
+            self.blit_on(widget.layout.x, widget.layout.y, &rounded_rect);
         } else {
-            let color: [u8; 4] = color.into();
-            for y in widget_y..widget_y + widget.height() {
-                for x in widget_x..widget_x + widget.width() {
+            let color: [u8; 4] = widget.style.color.into();
+            for y in widget.layout.y..widget.layout.y + widget.layout.h {
+                for x in widget.layout.x..widget.layout.x + widget.layout.w {
                     // Row major layout follows this formula
                     let idx = ((y * frame_width + x) * 4) as usize;
-                    frame[idx..idx + 4].copy_from_slice(&color);
+                    if idx + 3 < frame.len() {
+                        frame[idx..idx + 4].copy_from_slice(&color);
+                    }
                 }
             }
         }

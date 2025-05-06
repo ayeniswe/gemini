@@ -5,7 +5,7 @@ pub const WHITE: Color = Color::RGBA(255, 255, 255, 255);
 pub const BLACK: Color = Color::RGBA(0, 0, 0, 255);
 
 /// Represents an RGB color using 8-bit red, green, and blue components.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Color {
     /// An RGB color in the form (red, green, blue).
     RGBA(u8, u8, u8, u8),
