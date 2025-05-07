@@ -1,7 +1,6 @@
-use crate::{
-    action::Action,
-    ui::{layout::Grid, Color},
-};
+use std::cell::{Ref, RefCell, RefMut};
+
+use crate::action::Action;
 
 use super::{impl_widget, BaseWidget, Widget};
 
@@ -17,7 +16,8 @@ use super::{impl_widget, BaseWidget, Widget};
 /// for content or other widgets within that grid.
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
 pub struct Cell {
-    pub base: BaseWidget,
+    pub base: RefCell<BaseWidget>,
+    pub actions: RefCell<Vec<Action>>,
 }
 impl Cell {
     pub fn new() -> Self {

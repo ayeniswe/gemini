@@ -151,22 +151,23 @@ impl Renderer for PixelsRenderer {
         let frame_width = self.pixels.texture().width();
         let frame = self.pixels.frame_mut();
 
+        let widget = widget.base();
         // Draw widget base
-        if widget.radius() > 0 {
+        if widget.style.radius > 0 {
             // Offshoot to skia for smooth draws (if needed)
             let rounded_rect = PixelsRenderer::draw_rounded_rect(
-                widget.x() as f32,
-                widget.y() as f32,
-                widget.width() as f32,
-                widget.height() as f32,
-                widget.radius() as f32,
-                &widget.color(),
+                widget.layout.x as f32,
+                widget.layout.y as f32,
+                widget.layout.w as f32,
+                widget.layout.h as f32,
+                widget.style.radius as f32,
+                &widget.style.color,
             );
-            self.blit_on(widget.x(), widget.y(), &rounded_rect);
+            self.blit_on(widget.layout.x, widget.layout.y, &rounded_rect);
         } else {
-            let color: [u8; 4] = (*widget.color()).into();
-            for y in widget.y()..widget.y() + widget.height() {
-                for x in widget.x()..widget.x() + widget.width() {
+            let color: [u8; 4] = widget.style.color.into();
+            for y in widget.layout.y..widget.layout.y + widget.layout.h {
+                for x in widget.layout.x..widget.layout.x + widget.layout.w {
                     // Row major layout follows this formula
                     let idx = ((y * frame_width + x) * 4) as usize;
                     frame[idx..idx + 4].copy_from_slice(&color);
@@ -175,13 +176,13 @@ impl Renderer for PixelsRenderer {
         }
 
         // Draw widget styling
-        if let Some(grid) = &widget.grid() {
+        if let Some(grid) = &widget.style.grid {
             self.draw_gridlines(
-                (widget.x(), widget.y()),
-                widget.width(),
-                widget.height(),
+                (widget.layout.x, widget.layout.y),
+                widget.layout.w,
+                widget.layout.h,
                 grid.spacing,
-                *widget.color(),
+                widget.style.color,
                 1,
             );
         }

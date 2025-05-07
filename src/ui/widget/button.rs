@@ -1,3 +1,5 @@
+use std::cell::{RefCell, Ref, RefMut};
+
 use crate::{
     action::Action,
     ui::{layout::Grid, Color},
@@ -15,7 +17,8 @@ use super::{impl_widget, BaseWidget, Widget};
 /// where a button-like interaction is needed.
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
 pub struct Button {
-    pub base: BaseWidget,
+    pub base: RefCell<BaseWidget>,
+    pub actions: RefCell<Vec<Action>>,
 }
 impl Button {
     pub fn new() -> Self {

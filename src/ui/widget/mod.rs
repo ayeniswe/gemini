@@ -13,6 +13,8 @@
 //! This module is intended to serve as a UI foundation for applications
 //! requiring customizable and structured graphical interfaces.
 
+use std::cell::{Ref, RefMut};
+
 use crate::action::Action;
 
 use super::{
@@ -49,7 +51,6 @@ pub struct BaseWidget {
     pub text: Text,
     pub style: Style,
     pub layout: Layout,
-    pub actions: Vec<Action>,
 }
 
 /// A trait representing a basic UI component.
@@ -58,75 +59,39 @@ pub struct BaseWidget {
 /// for convenient method chaining.
 ///
 pub trait Widget {
-    fn grid(&self) -> &Option<Grid>;
-    fn x(&self) -> u32;
-    fn x_mut(&mut self) -> &mut u32;
-    fn y(&self) -> u32;
-    fn y_mut(&mut self) -> &mut u32;
-    fn height(&self) -> u32;
-    fn height_mut(&mut self) -> &mut u32;
-    fn width(&self) -> u32;
-    fn width_mut(&mut self) -> &mut u32;
-    fn radius(&self) -> u32;
-    fn radius_mut(&mut self) -> &mut u32;
-    fn label(&self) -> &str;
-    fn label_mut(&mut self) -> &mut String;
-    fn color(&self) -> &Color;
-    fn color_mut(&mut self) -> &mut Color;
-    fn action_mut(&mut self) -> &mut Vec<Action>;
-    fn set_label(mut self, label: &str) -> Self
-    where
-        Self: Sized,
-    {
-        *self.label_mut() = label.into();
+    fn action(&self) -> Ref<'_, Vec<Action>>;
+    fn action_mut(&self) -> RefMut<'_, Vec<Action>>;
+    fn base(&self) -> Ref<'_, BaseWidget>;
+    fn base_mut(&self) -> RefMut<'_, BaseWidget>;
+    fn set_label(&self, label: &str) -> &Self {
+        self.base_mut().text.label = label.into();
         self
     }
-    fn set_x(mut self, x: u32) -> Self
-    where
-        Self: Sized,
-    {
-        *self.x_mut() = x;
+    fn set_x(&self, x: u32) -> &Self {
+        self.base_mut().layout.x = x;
         self
     }
-    fn set_y(mut self, y: u32) -> Self
-    where
-        Self: Sized,
-    {
-        *self.y_mut() = y;
+    fn set_y(&self, y: u32) -> &Self {
+        self.base_mut().layout.y = y;
         self
     }
-    fn set_height(mut self, height: u32) -> Self
-    where
-        Self: Sized,
-    {
-        *self.height_mut() = height;
+    fn set_height(&self, height: u32) -> &Self {
+        self.base_mut().layout.h = height;
         self
     }
-    fn set_width(mut self, width: u32) -> Self
-    where
-        Self: Sized,
-    {
-        *self.width_mut() = width;
+    fn set_width(&self, width: u32) -> &Self {
+        self.base_mut().layout.w = width;
         self
     }
-    fn set_radius(mut self, radius: u32) -> Self
-    where
-        Self: Sized,
-    {
-        *self.radius_mut() = radius;
+    fn set_radius(&self, radius: u32) -> &Self {
+        self.base_mut().style.radius = radius;
         self
     }
-    fn set_color(mut self, color: Color) -> Self
-    where
-        Self: Sized,
-    {
-        *self.color_mut() = color;
+    fn set_color(&self, color: Color) -> &Self {
+        self.base_mut().style.color = color;
         self
     }
-    fn on_action(mut self, action: Action) -> Self
-    where
-        Self: Sized,
-    {
+    fn on_action(&self, action: Action) -> &Self {
         self.action_mut().push(action);
         self
     }
@@ -139,53 +104,17 @@ pub trait Widget {
 macro_rules! impl_widget {
     ($type:ty) => {
         impl Widget for $type {
-            fn grid(&self) -> &Option<Grid> {
-                &self.base.style.grid
+            fn base(&self) -> Ref<'_, BaseWidget> {
+                self.base.borrow()
             }
-            fn x(&self) -> u32 {
-                self.base.layout.x
+            fn base_mut(&self) -> RefMut<'_, BaseWidget> {
+                self.base.borrow_mut()
             }
-            fn x_mut(&mut self) -> &mut u32 {
-                &mut self.base.layout.x
+            fn action(&self) -> Ref<'_, Vec<Action>> {
+                self.actions.borrow()
             }
-            fn y(&self) -> u32 {
-                self.base.layout.y
-            }
-            fn y_mut(&mut self) -> &mut u32 {
-                &mut self.base.layout.y
-            }
-            fn height(&self) -> u32 {
-                self.base.layout.h
-            }
-            fn height_mut(&mut self) -> &mut u32 {
-                &mut self.base.layout.h
-            }
-            fn width(&self) -> u32 {
-                self.base.layout.w
-            }
-            fn width_mut(&mut self) -> &mut u32 {
-                &mut self.base.layout.w
-            }
-            fn label(&self) -> &str {
-                &self.base.text.label
-            }
-            fn label_mut(&mut self) -> &mut String {
-                &mut self.base.text.label
-            }
-            fn color(&self) -> &Color {
-                &self.base.style.color
-            }
-            fn color_mut(&mut self) -> &mut Color {
-                &mut self.base.style.color
-            }
-            fn radius(&self) -> u32 {
-                self.base.style.radius
-            }
-            fn radius_mut(&mut self) -> &mut u32 {
-                &mut self.base.style.radius
-            }
-            fn action_mut(&mut self) -> &mut Vec<Action> {
-                &mut self.base.actions
+            fn action_mut(&self) -> RefMut<'_, Vec<Action>> {
+                self.actions.borrow_mut()
             }
         }
     };

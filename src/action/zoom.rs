@@ -17,13 +17,15 @@ impl Zoom {
     }
 }
 impl Actionable for Zoom {
-    fn apply_action(&mut self, _: &Window, widget: &mut BaseWidget, event: Event<()>) {
+    fn apply_action(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<()>) {
         match event {
             Event::WindowEvent { event, .. } => match event {
                 MouseWheel { delta, .. } => match delta {
                     MouseScrollDelta::LineDelta(_, y) => {
                         widget.layout.w = (widget.layout.w as f32 + (y * self.scale)) as u32;
                         widget.layout.h = (widget.layout.h as f32 + (y * self.scale)) as u32;
+
+                        window.request_redraw();
                     }
                     _ => unreachable!(),
                 },

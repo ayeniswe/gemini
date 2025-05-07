@@ -15,12 +15,20 @@ use crate::ui::widget::BaseWidget;
 pub mod hover;
 pub mod zoom;
 
+
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum Action {
     Hover(Hover),
     ZoomInOut(Zoom),
 }
-
+impl Actionable for Action {
+    fn apply_action(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<()>) {
+        match self {
+            Action::Hover(hover) => hover.apply_action(window, widget, event),
+            Action::ZoomInOut(zoom) => zoom.apply_action(window, widget, event),
+        }
+    }
+}
 pub(crate) trait Actionable {
     fn apply_action(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<()>);
 }
