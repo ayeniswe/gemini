@@ -13,16 +13,11 @@
 //! This module is intended to serve as a UI foundation for applications
 //! requiring customizable and structured graphical interfaces.
 
-use std::cell::{Ref, RefMut};
+use std::{any::Any, cell::{Ref, RefMut}};
 
 use crate::action::Action;
 
-use super::{
-    color::Color,
-    layout::{Grid, Layout},
-    style::Style,
-    text::Text,
-};
+use super::{color::Color, layout::Layout, style::Style, text::Text};
 
 pub mod button;
 pub mod canvas;
@@ -48,6 +43,7 @@ pub(crate) mod cell;
 ///   respond to, such as clicks, hover events, or other interactions.
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
 pub struct BaseWidget {
+    pub id: String,
     pub text: Text,
     pub style: Style,
     pub layout: Layout,
@@ -58,40 +54,86 @@ pub struct BaseWidget {
 /// Types that implement `Widget` can use fluent-style setters
 /// for convenient method chaining.
 ///
-pub trait Widget {
+/// Widget MUST be polymorphic since at runtime we have no clue
+/// what widget could be used at the moment. Also to support one-offs
+/// with downcasting, we must use the dirty `Any` trait bounds :(
+pub trait Widget: Any {
+    fn as_any(&self) -> &dyn Any;
     fn action(&self) -> Ref<'_, Vec<Action>>;
     fn action_mut(&self) -> RefMut<'_, Vec<Action>>;
     fn base(&self) -> Ref<'_, BaseWidget>;
     fn base_mut(&self) -> RefMut<'_, BaseWidget>;
-    fn set_label(&self, label: &str) -> &Self {
+    /// Set the inside text for the widget
+    fn set_label(self, label: &str) -> Self
+    where
+        Self: Sized,
+    {
         self.base_mut().text.label = label.into();
         self
     }
-    fn set_x(&self, x: u32) -> &Self {
+    /// Set a unique id for widget
+    fn set_id(self, id: &str) -> Self
+    where
+        Self: Sized,
+    {
+        self.base_mut().id = id.into();
+        self
+    }
+    /// Set the x-axis position of the widget
+    fn set_x(self, x: u32) -> Self
+    where
+        Self: Sized,
+    {
         self.base_mut().layout.x = x;
         self
     }
-    fn set_y(&self, y: u32) -> &Self {
+    /// Set the y-axis position of the widget
+    fn set_y(self, y: u32) -> Self
+    where
+        Self: Sized,
+    {
         self.base_mut().layout.y = y;
         self
     }
-    fn set_height(&self, height: u32) -> &Self {
+    /// Set the height dimension of the widget
+    fn set_height(self, height: u32) -> Self
+    where
+        Self: Sized,
+    {
         self.base_mut().layout.h = height;
         self
     }
-    fn set_width(&self, width: u32) -> &Self {
+    /// Set the width dimension of the widget
+    fn set_width(self, width: u32) -> Self
+    where
+        Self: Sized,
+    {
         self.base_mut().layout.w = width;
         self
     }
-    fn set_radius(&self, radius: u32) -> &Self {
+    /// Set the corner radius of the widget
+    fn set_radius(self, radius: u32) -> Self
+    where
+        Self: Sized,
+    {
         self.base_mut().style.radius = radius;
         self
     }
-    fn set_color(&self, color: Color) -> &Self {
+    /// Set the background color of the widget
+    fn set_color(self, color: Color) -> Self
+    where
+        Self: Sized,
+    {
         self.base_mut().style.color = color;
         self
     }
-    fn on_action(&self, action: Action) -> &Self {
+    /// Add s trigger action for the widget
+    ///
+    /// See `Action` enum for the types of actions avaliable
+    fn on_action(self, action: Action) -> Self
+    where
+        Self: Sized,
+    {
         self.action_mut().push(action);
         self
     }
@@ -104,6 +146,9 @@ pub trait Widget {
 macro_rules! impl_widget {
     ($type:ty) => {
         impl Widget for $type {
+            fn as_any(&self) -> &dyn Any {
+                self
+            }
             fn base(&self) -> Ref<'_, BaseWidget> {
                 self.base.borrow()
             }

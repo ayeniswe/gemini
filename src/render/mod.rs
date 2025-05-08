@@ -6,8 +6,7 @@
 //!
 //! You can implement this trait for any rendering system, and the UI framework will use it to display components consistently across different platforms and backends.
 
-use crate::ui::widget::Widget;
-
+use crate::ui::widget::{canvas::Canvas, Widget};
 
 pub mod pixels_backend;
 
@@ -21,6 +20,7 @@ pub mod pixels_backend;
 /// ```
 pub trait Renderer {
     fn clear(&mut self);
-    fn draw_widget<T: Widget>(&mut self, widget: &T);
+    fn draw_canvas(&mut self, widget: &Canvas);
+    fn draw_widget(&mut self, widget: &dyn Widget);
     fn present(&mut self);
 }

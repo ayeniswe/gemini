@@ -3,7 +3,10 @@ use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Rect, Transform};
 
 use crate::{
     render::Renderer,
-    ui::{color::Color, widget::Widget},
+    ui::{
+        color::Color,
+        widget::{canvas::Canvas, Widget},
+    },
 };
 
 pub struct PixelsRenderer {
@@ -93,7 +96,9 @@ impl PixelsRenderer {
         }
     }
     fn draw_line(w: u32, h: u32, color: &Color) -> Pixmap {
-        let mut pixmap = Pixmap::new(w, h).unwrap();
+        // We can not render anything lower than zero
+        // since nothing will show...duhhh so we limit it to 1 minimal
+        let mut pixmap = Pixmap::new(w.max(1), h.max(1)).unwrap();
         let mut paint = Paint::default();
         paint.set_color((*color).into());
         pixmap.fill_rect(
@@ -147,11 +152,35 @@ impl Renderer for PixelsRenderer {
             pixel.copy_from_slice(&[0, 0, 0, 255]);
         }
     }
-    fn draw_widget<T: Widget>(&mut self, widget: &T) {
+    fn draw_canvas(&mut self, widget: &Canvas) {
+        self.draw_widget(widget);
+
+        if let Some(grid) = &mut *widget.grid.borrow_mut() {
+            let widget = widget.base();
+
+            // Draw gridlines
+            self.draw_gridlines(
+                (widget.layout.x, widget.layout.y),
+                widget.layout.w,
+                widget.layout.h,
+                grid.size,
+                widget.style.color,
+                grid.thickness,
+            );
+
+            // Draw cells (thickness of gridlines are accounted for)
+            grid.resize(widget.layout.h, widget.layout.w);
+            grid.on_cell(move |_, c| {
+                self.draw_widget(c);
+            });
+        }
+    }
+    fn draw_widget(&mut self, widget: &dyn Widget) {
         let frame_width = self.pixels.texture().width();
         let frame = self.pixels.frame_mut();
 
         let widget = widget.base();
+
         // Draw widget base
         if widget.style.radius > 0 {
             // Offshoot to skia for smooth draws (if needed)
@@ -170,22 +199,13 @@ impl Renderer for PixelsRenderer {
                 for x in widget.layout.x..widget.layout.x + widget.layout.w {
                     // Row major layout follows this formula
                     let idx = ((y * frame_width + x) * 4) as usize;
-                    frame[idx..idx + 4].copy_from_slice(&color);
+                    if idx + 3 < frame.len() {
+                        frame[idx..idx + 4].copy_from_slice(&color);
+                    }
                 }
             }
         }
 
-        // Draw widget styling
-        if let Some(grid) = &widget.style.grid {
-            self.draw_gridlines(
-                (widget.layout.x, widget.layout.y),
-                widget.layout.w,
-                widget.layout.h,
-                grid.spacing,
-                widget.style.color,
-                1,
-            );
-        }
         // (Optional) draw text later with `ab_glyph` or another crate
     }
     fn present(&mut self) {

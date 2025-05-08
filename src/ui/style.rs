@@ -20,5 +20,4 @@ use super::{color::Color, layout::Grid};
 pub struct Style {
     pub color: Color,
     pub radius: u32,
-    pub grid: Option<Grid>,
 }
