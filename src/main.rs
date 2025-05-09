@@ -20,6 +20,7 @@ fn main() {
     let cnv = Canvas::new()
         .set_width(256)
         .set_height(256)
+        .set_label("The main man is here")
         .set_grid(8, 1)
         .on_action(Action::ZoomInOut(Zoom::new_with_bounds(
             ZoomLevel::Zoom16x,

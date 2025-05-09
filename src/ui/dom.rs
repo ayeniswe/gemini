@@ -8,7 +8,7 @@ use winit::{
 
 use crate::{
     action::Actionable,
-    render::{pixels_backend::PixelsRenderer, Renderer as _},
+    render::{pixels_backend::{PixelsRenderer, NO_CUSTOM}, Renderer as _},
 };
 
 use super::widget::{canvas::Canvas, Widget};
@@ -71,7 +71,7 @@ impl DOM {
                                 if let Some(widget) = node.as_any().downcast_ref::<Canvas>() {
                                     self.renderer.draw_canvas(widget);
                                 } else {
-                                    self.renderer.draw_widget(node.as_ref());
+                                    self.renderer.draw_widget(node.as_ref(), NO_CUSTOM);
                                 }
                             }
 

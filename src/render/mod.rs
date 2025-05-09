@@ -21,6 +21,13 @@ pub mod pixels_backend;
 pub trait Renderer {
     fn clear(&mut self);
     fn draw_canvas(&mut self, widget: &Canvas);
-    fn draw_widget(&mut self, widget: &dyn Widget);
+    fn draw_widget<F: Fn(&mut Self) >(&mut self, widget: &dyn Widget, custom_render: Option<F>);
     fn present(&mut self);
+}
+
+/// Follows the row major formula
+/// for indices mapping to a frame buffer with 
+/// RGBA channel
+fn row_major(x: u32, y: u32, width: u32) -> usize {
+    ((y * width + x) * 4) as usize
 }

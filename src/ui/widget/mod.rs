@@ -22,6 +22,7 @@ use super::{color::Color, layout::Layout, style::Style, text::Text};
 pub mod button;
 pub mod canvas;
 pub(crate) mod cell;
+pub mod container;
 
 /// A base struct representing a generic UI widget.
 ///
