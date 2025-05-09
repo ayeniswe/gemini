@@ -8,10 +8,10 @@ use winit::{
 
 use crate::{
     action::Actionable,
-    render::{pixels_backend::{PixelsRenderer, NO_CUSTOM}, Renderer as _},
+    render::{pixels_backend::PixelsRenderer, Renderer as _},
 };
 
-use super::widget::{canvas::Canvas, Widget};
+use super::widget::{canvas::Canvas, container::Container, Widget};
 
 /// The main entry point for building and managing the UI tree.
 ///
@@ -50,6 +50,32 @@ impl DOM {
             cursor_position: PhysicalPosition::default(),
         }
     }
+    fn attach_listeners(window: &Window, node: &Box<dyn Widget>, event: Event<()>) {
+        let mut actions = node.action_mut();
+        let mut widget = node.base_mut();
+        for action in actions.iter_mut() {
+            action.apply_action(window, &mut widget, event.clone());
+        }
+
+        // Child nodes are possible and must invoke any events as well
+        if let Some(canvas) = node.as_any().downcast_ref::<Canvas>() {
+            // Handle all grid cells of canvas
+            let grid = &*canvas.grid.borrow();
+            if let Some(grid) = grid {
+                grid.on_cell(|_, c| {
+                    let mut actions = c.action_mut();
+                    let mut widget = c.base_mut();
+                    for action in actions.iter_mut() {
+                        action.apply_action(window, &mut widget, event.clone());
+                    }
+                });
+            }
+        } else if let Some(container) = node.as_any().downcast_ref::<Container>() {
+            for child in &container.children  {
+                DOM::attach_listeners(window, child, event.clone());
+            }   
+        }
+    }
     pub fn run(mut self) {
         self.event_loop
             .run(|event, target| {
@@ -68,49 +94,20 @@ impl DOM {
                             self.renderer.clear();
 
                             for node in &self.nodes {
-                                if let Some(widget) = node.as_any().downcast_ref::<Canvas>() {
-                                    self.renderer.draw_canvas(widget);
-                                } else {
-                                    self.renderer.draw_widget(node.as_ref(), NO_CUSTOM);
-                                }
+                                self.renderer.draw(node);
                             }
 
                             self.renderer.present();
                         }
                         _ => (),
                     },
-
                     _ => (),
                 }
-
                 // Act on the widget apperance and behaviours based on the
                 // actions they subscribed to and only triggering action based
                 // on the actions logic
                 for node in &self.nodes {
-                    let mut actions = node.action_mut();
-                    let mut widget = node.base_mut();
-                    for action in actions.iter_mut() {
-                        action.apply_action(&self.window, &mut widget, event.clone());
-                    }
-
-                    // Child nodes are possible and must invoke any events as well
-                    if let Some(canvas) = node.as_any().downcast_ref::<Canvas>() {
-                        // Handle all grid cells of canvas
-                        let grid = &*canvas.grid.borrow();                    
-                        if let Some(grid) = grid {
-                            grid.on_cell(|_, c| {
-                                let mut actions = c.action_mut();
-                                let mut widget = c.base_mut();
-                                for action in actions.iter_mut() {
-                                    action.apply_action(
-                                        &self.window,
-                                        &mut widget,
-                                        event.clone(),
-                                    );
-                                }
-                            });
-                        }
-                    }
+                    DOM::attach_listeners(&self.window, node, event.clone());
                 }
             })
             .unwrap();

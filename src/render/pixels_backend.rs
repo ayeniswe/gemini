@@ -6,7 +6,7 @@ use crate::{
     render::Renderer,
     ui::{
         color::{Color, BLACK, WHITE},
-        widget::{canvas::Canvas, Widget},
+        widget::{canvas::Canvas, container::Container, Widget},
     },
 };
 
@@ -15,7 +15,7 @@ use super::row_major;
 type NoCustom = Option<fn(&mut PixelsRenderer)>;
 
 const DEFAULT_FONT: &'static [u8; 146004] = include_bytes!("../../fonts/Roboto-Regular.ttf");
-pub(crate) const NO_CUSTOM: NoCustom = None;
+const NO_CUSTOM: NoCustom = None;
 
 pub struct PixelsRenderer {
     pixels: Pixels,
@@ -39,6 +39,31 @@ impl PixelsRenderer {
             BLACK
         } else {
             WHITE
+        }
+    }
+    /// Copies the pixel data from the given `Pixmap` onto the current frame buffer.
+    ///
+    /// This method performs a direct memory copy (blit) from the source `Pixmap`
+    /// to the destination frame managed by the `pixels` instance. It assumes both
+    /// the source and destination have the same pixel format (e.g., RGBA, 4 bytes per pixel)
+    /// and that the destination frame is large enough to accommodate the pixmap.
+    fn blit_on(&mut self, offset_x: u32, offset_y: u32, map: &Pixmap) {
+        let frame_width = self.pixels.texture().width();
+        let frame = self.pixels.frame_mut();
+        let map_buffer = map.data();
+
+        for y in 0..map.height() {
+            for x in 0..map.width() {
+                let frame_idx = row_major(x + offset_x, y + offset_y, frame_width);
+                let map_idx = row_major(x, y, map.width());
+                if frame_idx + 3 < frame.len() {
+                    let out = &Color::src_over_blend(
+                        &map_buffer[map_idx..map_idx + 4],
+                        &frame[frame_idx..frame_idx + 4],
+                    );
+                    frame[frame_idx..frame_idx + 4].copy_from_slice(out);
+                }
+            }
         }
     }
     fn draw_rounded_rect(x: f32, y: f32, w: f32, h: f32, r: f32, color: &Color) -> Pixmap {
@@ -187,40 +212,6 @@ impl PixelsRenderer {
         }
         pixmap
     }
-    /// Copies the pixel data from the given `Pixmap` onto the current frame buffer.
-    ///
-    /// This method performs a direct memory copy (blit) from the source `Pixmap`
-    /// to the destination frame managed by the `pixels` instance. It assumes both
-    /// the source and destination have the same pixel format (e.g., RGBA, 4 bytes per pixel)
-    /// and that the destination frame is large enough to accommodate the pixmap.
-    fn blit_on(&mut self, offset_x: u32, offset_y: u32, map: &Pixmap) {
-        let frame_width = self.pixels.texture().width();
-        let frame = self.pixels.frame_mut();
-        let map_buffer = map.data();
-
-        for y in 0..map.height() {
-            for x in 0..map.width() {
-                let frame_idx = row_major(x + offset_x, y + offset_y, frame_width);
-                let map_idx = row_major(x, y, map.width());
-                if frame_idx + 3 < frame.len() {
-                    let out = &Color::src_over_blend(
-                        &map_buffer[map_idx..map_idx + 4],
-                        &frame[frame_idx..frame_idx + 4],
-                    );
-                    frame[frame_idx..frame_idx + 4].copy_from_slice(out);
-                }
-            }
-        }
-    }
-}
-
-impl Renderer for PixelsRenderer {
-    fn clear(&mut self) {
-        let frame = self.pixels.frame_mut();
-        for pixel in frame.chunks_exact_mut(4) {
-            pixel.copy_from_slice(&[0, 0, 0, 255]);
-        }
-    }
     fn draw_canvas(&mut self, widget: &Canvas) {
         if widget.grid.borrow().is_none() {
             self.draw_widget(widget, NO_CUSTOM);
@@ -242,7 +233,12 @@ impl Renderer for PixelsRenderer {
                         );
 
                         // Draw cells (thickness of gridlines are accounted for)
-                        grid.resize(widget.layout.h, widget.layout.w);
+                        grid.resize(
+                            widget.layout.x,
+                            widget.layout.y,
+                            widget.layout.h,
+                            widget.layout.w,
+                        );
                         grid.on_cell(|_, c| {
                             renderer.draw_widget(c, NO_CUSTOM);
                         });
@@ -297,7 +293,32 @@ impl Renderer for PixelsRenderer {
             self.blit_on(widget.layout.x, widget.layout.y, &text);
         }
     }
+    fn draw(&mut self, widget: &Box<dyn Widget>) {
+        if let Some(widget) = widget.as_any().downcast_ref::<Container>() {
+            self.draw_widget(widget, NO_CUSTOM);
+
+            // Children must always sit atop their parents
+            for child in &widget.children {
+                self.draw(child);
+            }
+        } else if let Some(widget) = widget.as_any().downcast_ref::<Canvas>() {
+            self.draw_canvas(widget);
+        } else {
+            self.draw_widget(widget.as_ref(), NO_CUSTOM);
+        }
+    }
+}
+impl Renderer for PixelsRenderer {
+    fn clear(&mut self) {
+        let frame = self.pixels.frame_mut();
+        for pixel in frame.chunks_exact_mut(4) {
+            pixel.copy_from_slice(&[0, 0, 0, 255]);
+        }
+    }
     fn present(&mut self) {
         self.pixels.render().unwrap();
+    }
+    fn draw(&mut self, widget: &Box<dyn Widget>) {
+        self.draw(widget);
     }
 }

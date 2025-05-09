@@ -117,7 +117,7 @@ mod tests {
         let c = Canvas::new().set_width(32).set_height(16).set_grid(4, 1);
 
         let mut grid = c.grid.borrow_mut().clone().unwrap();
-        grid.resize(16, 32);
+        grid.resize(0,0, 16, 32);
 
         let cells = grid.cells;
         assert!(
