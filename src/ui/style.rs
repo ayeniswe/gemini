@@ -1,4 +1,4 @@
-use super::{color::Color, layout::Grid};
+use super::color::Color;
 
 /// A struct representing the visual style of a UI element.
 ///
@@ -10,8 +10,8 @@ use super::{color::Color, layout::Grid};
 ///
 /// - `color`: Defines the color of the UI element, typically used for the
 ///   background, text, or other visual components.
-/// - `radius`: Specifies the corner radius (rounded corners) for the UI 
-///   element. This value controls how rounded the corners of the element 
+/// - `radius`: Specifies the corner radius (rounded corners) for the UI
+///   element. This value controls how rounded the corners of the element
 ///   should be.
 /// - `grid`: Optionally defines a `Grid` layout for the element. If present,
 ///   this field indicates that the element follows a grid-based structure

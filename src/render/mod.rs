@@ -6,7 +6,7 @@
 //!
 //! You can implement this trait for any rendering system, and the UI framework will use it to display components consistently across different platforms and backends.
 
-use crate::ui::widget::{canvas::Canvas, Widget};
+use crate::ui::widget::Widget;
 
 pub mod pixels_backend;
 
@@ -20,13 +20,12 @@ pub mod pixels_backend;
 /// ```
 pub trait Renderer {
     fn clear(&mut self);
-    fn draw_canvas(&mut self, widget: &Canvas);
-    fn draw_widget<F: Fn(&mut Self) >(&mut self, widget: &dyn Widget, custom_render: Option<F>);
+    fn draw(&mut self, widget: &Box<dyn Widget>);
     fn present(&mut self);
 }
 
 /// Follows the row major formula
-/// for indices mapping to a frame buffer with 
+/// for indices mapping to a frame buffer with
 /// RGBA channel
 fn row_major(x: u32, y: u32, width: u32) -> usize {
     ((y * width + x) * 4) as usize

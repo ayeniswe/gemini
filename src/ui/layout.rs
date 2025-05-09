@@ -1,7 +1,5 @@
 use crate::ui::widget::cell::Cell;
 
-use super::widget::canvas::Canvas;
-
 /// A struct representing the position and size of a UI element.
 ///
 /// The `Layout` struct encapsulates the layout properties for a UI element,
@@ -56,8 +54,8 @@ impl Grid {
         }
     }
     /// Resize grid to meet the dimensions of
-    /// `height x width`
-    pub(crate) fn resize(&mut self, height: u32, width: u32) {
+    /// `height x width` also account for pos `x` and `y` offset
+    pub(crate) fn resize(&mut self, x: u32, y: u32, height: u32, width: u32) {
         let h_cell_size = height / self.size;
         let w_cell_size = width / self.size;
 
@@ -68,8 +66,16 @@ impl Grid {
             // cells
             let buffer_x = pos.0 * w_cell_size;
             let buffer_y = pos.1 * h_cell_size;
-            cbase.layout.x = if buffer_x > 0 { buffer_x + self.thickness } else { 0 };
-            cbase.layout.y = if buffer_y > 0 { buffer_y + self.thickness } else { 0 };
+            cbase.layout.x = if buffer_x > 0 {
+                buffer_x + self.thickness
+            } else {
+                0
+            } + x;
+            cbase.layout.y = if buffer_y > 0 {
+                buffer_y + self.thickness
+            } else {
+                0
+            } + y;
             cbase.layout.w = if buffer_x > 0 {
                 w_cell_size - self.thickness
             } else {

@@ -5,9 +5,9 @@ use gemini::{
         Action,
     },
     ui::{
-        color::Color,
+        color::{Color, RED},
         dom::DOM,
-        widget::{canvas::Canvas, Widget as _},
+        widget::{canvas::Canvas, container::Container, Widget as _},
     },
 };
 use log::info;
@@ -16,7 +16,6 @@ fn main() {
     log4rs::init_file("log4rs.yaml", Default::default()).expect("Failed to init logger");
     info!("Starting demo UI app...");
 
-    // === Create Canvas ===
     let cnv = Canvas::new()
         .set_width(256)
         .set_height(256)
@@ -30,7 +29,15 @@ fn main() {
             235, 235, 235, 255,
         )))]);
 
-    let mut d = DOM::new(640, 320);
-    d.add_widget(cnv);
+    let central_panel = Container::new()
+        .set_width(512)
+        .set_height(512)
+        .set_horizontal()
+        .set_vertical()
+        .set_color(RED)
+        .add_widget(cnv);
+
+    let mut d = DOM::new(640, 512);
+    d.add_widget(central_panel);
     d.run();
 }
