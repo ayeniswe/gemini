@@ -18,7 +18,7 @@ use super::{impl_widget, BaseWidget, Widget};
 /// This struct is typically used in a `Grid` layout where each `Cell`
 /// acts as an individual container
 /// for content or other widgets within that grid.
-#[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Default, Clone)]
 pub struct Cell {
     pub base: RefCell<BaseWidget>,
     pub actions: RefCell<Vec<Action>>,

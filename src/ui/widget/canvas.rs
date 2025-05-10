@@ -19,7 +19,7 @@ use super::{impl_widget, BaseWidget, Widget};
 ///
 /// The `Canvas` can be used as a drawing surface, allowing you to add
 /// elements like shapes, images, or other visual content.
-#[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Default)]
 pub struct Canvas {
     pub base: RefCell<BaseWidget>,
     pub actions: RefCell<Vec<Action>>,
@@ -57,7 +57,8 @@ impl Canvas {
     /// the canvas grid
     ///
     /// NoOp if `set_grid` was not called before
-    ///
+    /// 
+    /// Cheaper to set them manullay with `set_cell_action`
     /// # Panics
     ///
     /// This function will panic if `Canvas` never called `set_width` or `set_height`
@@ -66,8 +67,8 @@ impl Canvas {
             for y in 0..grid.size as usize {
                 for x in 0..grid.size as usize {
                     let cell = &grid.cells[x][y];
-                    for action in &actions {
-                        cell.action_mut().push(*action);
+                    for action in actions.iter().cloned() {
+                        cell.action_mut().push(action);
                     }
                 }
             }
