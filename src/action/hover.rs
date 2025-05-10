@@ -20,10 +20,7 @@ impl Hover {
         }
     }
     fn update_hover_state(&mut self, widget: &mut BaseWidget, mx: f64, my: f64) {
-        self.hovered = mx >= widget.layout.x as f64
-            && mx <= (widget.layout.x + widget.layout.w) as f64
-            && my >= widget.layout.y as f64
-            && my <= (widget.layout.y + widget.layout.h) as f64
+        self.hovered = widget.layout.is_inbounds(mx, my)
     }
     pub(crate) fn apply(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<()>) {
         match event {

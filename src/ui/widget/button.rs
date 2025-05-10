@@ -15,7 +15,7 @@ use super::{impl_widget, BaseWidget, Widget};
 ///
 /// The `Button` can be used in graphical user interfaces or any context
 /// where a button-like interaction is needed.
-#[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Default, Clone)]
 pub struct Button {
     pub base: RefCell<BaseWidget>,
     pub actions: RefCell<Vec<Action>>,

@@ -23,6 +23,16 @@ pub struct Layout {
     pub w: u32,
     pub h: u32,
 }
+impl Layout {
+    /// Determines if mouse is  in the bounds of this
+    /// layout
+    pub(crate) fn is_inbounds(&self, mx: f64, my: f64) -> bool {
+        mx >= self.x as f64
+            && mx <= (self.x + self.w) as f64
+            && my >= self.y as f64
+            && my <= (self.y + self.h) as f64
+    }
+}
 
 /// A struct representing a grid layout for UI elements.
 ///
@@ -37,7 +47,7 @@ pub struct Layout {
 ///   Each `Cell` contains a UI widget or content that is arranged in the
 ///   grid's structure. The dimensions of this vector define the grid's rows
 ///   and columns.
-#[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Default, Clone)]
 pub struct Grid {
     pub(crate) size: u32,
     pub(crate) cells: Vec<Vec<Cell>>,
