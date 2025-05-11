@@ -15,12 +15,18 @@
 
 use std::{
     any::Any,
-    cell::{Ref, RefCell, RefMut},
+    cell::{Ref, RefMut},
 };
 
 use crate::action::Action;
 
-use super::{color::Color, layout::Layout, state::State, style::Style, text::Text};
+use super::{
+    color::{Color, ColorState},
+    layout::Layout,
+    state::State,
+    style::Style,
+    text::Text,
+};
 
 pub mod button;
 pub mod canvas;
@@ -136,7 +142,7 @@ pub trait Widget: Any {
     where
         Self: Sized,
     {
-        self.base_mut().style.color = color;
+        self.base_mut().style.color = ColorState::new(color);
         self
     }
     /// Add s trigger action for the widget

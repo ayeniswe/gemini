@@ -1,4 +1,4 @@
-use super::color::Color;
+use super::color::ColorState;
 
 /// A struct representing the visual style of a UI element.
 ///
@@ -18,6 +18,6 @@ use super::color::Color;
 ///   (e.g., for a container widget with a grid of items or cells).
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
 pub struct Style {
-    pub color: Color,
+    pub color: ColorState,
     pub radius: u32,
 }
