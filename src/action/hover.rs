@@ -4,7 +4,10 @@ use winit::{
     window::Window,
 };
 
-use crate::ui::{color::Color, widget::BaseWidget};
+use crate::ui::{
+    color::{Color, ColorMode},
+    widget::BaseWidget,
+};
 
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Hover {
@@ -21,20 +24,19 @@ impl Hover {
         match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CursorMoved { position, .. } => {
-                    let previous_hover_state = self.hovered;
+                    let previous_hover_state = widget.state.hovered;
 
-                    widget.state.hovered = widget.layout.is_inbounds(mx, my);
+                    widget.state.hovered = widget.layout.is_inbounds(position.x, position.y);
 
-                    if previous_hover_state != self.hovered {
-                        if self.hovered {
+                    if previous_hover_state != widget.state.hovered {
+                        if widget.state.hovered {
                             debug!("triggered hover for widget: {}", widget.id);
-
-                            self.base_color = widget.style.color;
-                            // Swap palette..we can always expect the base to be retrieved
-                            // since swap will never happen unless an intial hover took place
-                            widget.style.color = self.hover_color
+                            widget
+                                .style
+                                .color
+                                .set_mode(ColorMode::Overlay(self.hover_color));
                         } else {
-                            widget.style.color = self.base_color
+                            widget.style.color.set_mode(ColorMode::Solid);
                         }
 
                         window.request_redraw()

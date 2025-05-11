@@ -6,7 +6,6 @@ use crate::{
     render::Renderer,
     ui::{
         color::{Color, BLACK, WHITE},
-        layout::Layout,
         widget::{canvas::Canvas, container::Container, Widget},
     },
 };
@@ -229,7 +228,7 @@ impl PixelsRenderer {
                             widget.layout.w,
                             widget.layout.h,
                             grid.size,
-                            widget.style.color,
+                            widget.style.color.into(),
                             grid.thickness,
                         );
 
@@ -251,7 +250,7 @@ impl PixelsRenderer {
     fn draw_widget<F: Fn(&mut Self)>(&mut self, widget: &dyn Widget, custom_render: Option<F>) {
         let widget = widget.base();
 
-        let color = widget.style.color;
+        let color = widget.style.color.into();
 
         // Draw widget base with constraints
         if widget.style.radius > 0 {

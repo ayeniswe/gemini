@@ -30,7 +30,7 @@ impl Palette {
 }
 impl ClickHandler for Palette {
     fn apply(&mut self, window: &Window, widget: &mut BaseWidget) {
-        widget.style.color = self.selected;
+        widget.style.color.set_color(self.selected);
         window.request_redraw();
     }
 }
@@ -49,9 +49,7 @@ fn main() {
         )))
         .set_cells_actions(vec![
             Action::LeftClick(Click::new(Rc::new(RefCell::new(Palette::new())))),
-            // Action::Hover(Hover::new(Color::RGBA(235, 235, 235, 255))),
-            Action::Hover(Hover::new(Color::RGBA(0, 0, 0, 255))),
-
+            Action::Hover(Hover::new(Color::RGBA(235, 235, 235, 75))),
         ]);
 
     let mut d = DOM::new(640, 512);
