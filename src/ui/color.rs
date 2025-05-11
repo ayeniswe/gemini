@@ -14,14 +14,14 @@ pub enum Color {
 impl Color {
     /// Source over blend for RGB channels that
     /// have not been premultiplied
-    /// 
-    /// This blends the alpha of a foreground and background 
+    ///
+    /// This blends the alpha of a foreground and background
     /// to give a smooth blend effect. The foregound influence
     /// is inversely related by how much of the background is being shown
     /// through the background's opacity
-    /// 
+    ///
     /// # Panics
-    /// This function will panic if `fg` and `bg` are not exactly 
+    /// This function will panic if `fg` and `bg` are not exactly
     /// 4 bytes of data
     pub(crate) fn src_over_blend(fg: &[u8], bg: &[u8]) -> [u8; 4] {
         assert!(fg.len() == 4 && bg.len() == 4);
@@ -29,6 +29,7 @@ impl Color {
         let bg_r = bg[0] as f32;
         let bg_g = bg[1] as f32;
         let bg_b = bg[2] as f32;
+        let bg_a = bg[3] as f32;
 
         let fg_r = fg[0] as f32;
         let fg_g = fg[1] as f32;
@@ -74,6 +75,18 @@ impl From<Color> for [u8; 4] {
         match color {
             Color::RGBA(r, g, b, a) => [r, g, b, a],
         }
+    }
+}
+impl From<Color> for Vec<u8> {
+    fn from(color: Color) -> Self {
+        match color {
+            Color::RGBA(r, g, b, a) => vec![r, g, b, a],
+        }
+    }
+}
+impl From<[u8; 4]> for Color {
+    fn from(color: [u8; 4]) -> Self {
+        Color::RGBA(color[0], color[1], color[2], color[3])
     }
 }
 impl From<Color> for tiny_skia::Color {

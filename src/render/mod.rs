@@ -6,7 +6,7 @@
 //!
 //! You can implement this trait for any rendering system, and the UI framework will use it to display components consistently across different platforms and backends.
 
-use crate::ui::widget::Widget;
+use crate::ui::{layout::Layout, widget::Widget};
 
 pub mod pixels_backend;
 

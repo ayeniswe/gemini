@@ -49,7 +49,9 @@ fn main() {
         )))
         .set_cells_actions(vec![
             Action::LeftClick(Click::new(Rc::new(RefCell::new(Palette::new())))),
-            Action::Hover(Hover::new(Color::RGBA(235, 235, 235, 255))),
+            // Action::Hover(Hover::new(Color::RGBA(235, 235, 235, 255))),
+            Action::Hover(Hover::new(Color::RGBA(0, 0, 0, 255))),
+
         ]);
 
     let mut d = DOM::new(640, 512);
