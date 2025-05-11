@@ -13,11 +13,14 @@
 //! This module is intended to serve as a UI foundation for applications
 //! requiring customizable and structured graphical interfaces.
 
-use std::{any::Any, cell::{Ref, RefMut}};
+use std::{
+    any::Any,
+    cell::{Ref, RefCell, RefMut},
+};
 
 use crate::action::Action;
 
-use super::{color::Color, layout::Layout, style::Style, text::Text};
+use super::{color::Color, layout::Layout, state::State, style::Style, text::Text};
 
 pub mod button;
 pub mod canvas;
@@ -42,12 +45,15 @@ pub mod container;
 /// - `actions`: A collection of actions associated with the widget. Actions
 ///   represent the behaviors or events that the widget can trigger or
 ///   respond to, such as clicks, hover events, or other interactions.
+/// - `state`: A variety of transient visual states the widget is
+///   currently in
 #[derive(Default, Debug, Clone, PartialEq, PartialOrd)]
 pub struct BaseWidget {
     pub id: String,
     pub text: Text,
     pub style: Style,
     pub layout: Layout,
+    pub state: State,
 }
 
 /// A trait representing a basic UI component.
@@ -59,10 +65,15 @@ pub struct BaseWidget {
 /// what widget could be used at the moment. Also to support one-offs
 /// with downcasting, we must use the dirty `Any` trait bounds :(
 pub trait Widget: Any {
+    /// Allows downcasting to concrete types by returning a reference to `Any`.
     fn as_any(&self) -> &dyn Any;
+    /// Returns an immutable reference to the list of actions associated with the widget.
     fn action(&self) -> Ref<'_, Vec<Action>>;
+    /// Returns a mutable reference to the list of actions associated with the widget.
     fn action_mut(&self) -> RefMut<'_, Vec<Action>>;
+    /// Returns an immutable reference to the widget's base properties.
     fn base(&self) -> Ref<'_, BaseWidget>;
+    /// Returns a mutable reference to the widget's base properties.
     fn base_mut(&self) -> RefMut<'_, BaseWidget>;
     /// Set the inside text for the widget
     fn set_label(self, label: &str) -> Self

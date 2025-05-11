@@ -6,6 +6,7 @@ use crate::{
     render::Renderer,
     ui::{
         color::{Color, BLACK, WHITE},
+        layout::Layout,
         widget::{canvas::Canvas, container::Container, Widget},
     },
 };
