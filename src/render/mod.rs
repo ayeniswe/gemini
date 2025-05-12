@@ -28,5 +28,5 @@ pub trait Renderer {
 /// for indices mapping to a frame buffer with
 /// RGBA channel
 fn row_major(x: u32, y: u32, width: u32) -> usize {
-    ((y * width + x) * 4) as usize
+    y.saturating_mul(width).saturating_add(x).saturating_mul(4) as usize
 }

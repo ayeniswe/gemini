@@ -7,6 +7,10 @@ appenders:
 loggers:
   wgpu_core:
     level: off
+  wgpu_hal:
+    level: off
+  naga:
+    level: off
 
 root:
   level: debug

@@ -1,3 +1,5 @@
+use std::default;
+
 use crate::ui::widget::cell::Cell;
 
 /// A struct representing the position and size of a UI element.
@@ -32,6 +34,31 @@ impl Layout {
             && my >= self.y as f64
             && my <= (self.y + self.h) as f64
     }
+    /// Determines the center of the layout vertically
+    /// with the `rhs` included in the layout
+    pub(crate) fn vertical_center(&self, rhs: u32) -> u32 {
+        (self.h.saturating_sub(rhs)) / 2
+    }
+    /// Determines the center of the layout horizontally
+    /// with the `rhs` included in the layout
+    pub(crate) fn horizontal_center(&self, rhs: u32) -> u32 {
+        (self.w.saturating_sub(rhs)) / 2
+    }
+}
+
+/// The `Point` struct defines a simple x and y coordinates
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Point {
+    pub x: u32,
+    pub y: u32,
+}
+impl From<ab_glyph::Point> for Point {
+    fn from(value: ab_glyph::Point) -> Self {
+        Point {
+            x: value.x as u32,
+            y: value.y as u32,
+        }
+    }
 }
 
 /// A struct representing a grid layout for UI elements.
@@ -49,33 +76,33 @@ impl Layout {
 ///   and columns.
 #[derive(Default, Clone)]
 pub struct Grid {
-    pub(crate) size: u32,
+    pub(crate) size: Point,
     pub(crate) cells: Vec<Vec<Cell>>,
     pub(crate) thickness: u32,
 }
 impl Grid {
     /// Create a new `Grid` filling the `cells`
-    /// with an empty widget for `size x size`
-    pub(crate) fn new(size: u32, thickness: u32) -> Self {
+    /// with an empty widget with size `[size.y][size.x]`
+    pub(crate) fn new(size: Point, thickness: u32) -> Self {
         Self {
             size,
-            cells: vec![vec![Cell::default(); size as usize]; size as usize],
+            cells: vec![vec![Cell::default(); size.x as usize]; size.y as usize],
             thickness,
         }
     }
     /// Resize grid to meet the dimensions of
     /// `height x width` also account for pos `x` and `y` offset
     pub(crate) fn resize(&mut self, x: u32, y: u32, height: u32, width: u32) {
-        let h_cell_size = height / self.size;
-        let w_cell_size = width / self.size;
+        let h_cell_size = height / self.size.y;
+        let w_cell_size = width / self.size.x;
 
         self.on_cell(|pos, c| {
             let mut cbase = c.base.borrow_mut();
             // Due to line thickness being at minimal 1 px we need to
             // account for that spacing that way we do not overlap
             // cells
-            let buffer_x = pos.0 * w_cell_size;
-            let buffer_y = pos.1 * h_cell_size;
+            let buffer_x = pos.x * w_cell_size;
+            let buffer_y = pos.y * h_cell_size;
             cbase.layout.x = if buffer_x > 0 {
                 buffer_x + self.thickness
             } else {
@@ -100,13 +127,19 @@ impl Grid {
     }
     /// Callback function on every cell
     ///
-    /// Callback receives the 2D indices pos `(u32, u32)` as well as
+    /// Callback receives the 2D indices pos `Point` as well as
     /// the concrete Cell instance
-    pub(crate) fn on_cell<F: FnMut((u32, u32), &Cell)>(&self, mut callback: F) {
-        for y in 0..self.size as usize {
-            for x in 0..self.size as usize {
-                let cell = &self.cells[x][y];
-                callback((x as u32, y as u32), cell)
+    pub(crate) fn on_cell<F: FnMut(Point, &Cell)>(&self, mut callback: F) {
+        for y in 0..self.size.y as usize {
+            for x in 0..self.size.x as usize {
+                let cell = &self.cells[y][x];
+                callback(
+                    Point {
+                        x: x as u32,
+                        y: y as u32,
+                    },
+                    cell,
+                )
             }
         }
     }
@@ -114,3 +147,34 @@ impl Grid {
 
 pub type Row = usize;
 pub type Col = usize;
+
+/// The `FlexLayout` provides a variety of ways to organize
+/// the container of widgets in a uniform way
+#[derive(Default, Clone)]
+pub enum FlexLayout {
+    #[default]
+    /// Default for `Container` widget
+    None,
+    /// Layout a container as a grid with a specific amount of
+    /// columns
+    ///
+    /// ## Example
+    /// ```
+    /// let mut central_panel = Container::new().set_flex_layout(FlexLayout::FlexGrid(4))
+    /// ```
+    /// 
+    /// How the layout would look if 5 widgets 
+    /// were stored in the container:
+    /// 
+    /// ```
+    /// -----------------
+    /// | w | w | w | w |
+    /// | w |            
+    /// -----------------                   
+    /// ```
+    /// 
+    /// # Panics
+    /// 
+    /// If the `Col` specified is 0 it will panic
+    FlexGrid(Col),
+}

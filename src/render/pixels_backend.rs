@@ -6,6 +6,8 @@ use crate::{
     render::Renderer,
     ui::{
         color::{Color, BLACK, WHITE},
+        layout::Point,
+        text::DEFAULT_FONT,
         widget::{canvas::Canvas, container::Container, Widget},
     },
 };
@@ -13,8 +15,6 @@ use crate::{
 use super::row_major;
 
 type NoCustom = Option<fn(&mut PixelsRenderer)>;
-
-const DEFAULT_FONT: &'static [u8; 146004] = include_bytes!("../../fonts/Roboto-Regular.ttf");
 const NO_CUSTOM: NoCustom = None;
 
 pub struct PixelsRenderer {
@@ -127,16 +127,16 @@ impl PixelsRenderer {
         pos: (u32, u32),
         width: u32,
         height: u32,
-        spacing: u32,
+        spacing: Point,
         color: Color,
         thickness: u32,
     ) {
         let (x, y) = pos;
 
-        let h_lines_spacing = height / spacing;
-        let w_lines_spacing = width / spacing;
+        let h_lines_spacing = height / spacing.y;
+        let w_lines_spacing = width / spacing.x;
         // Draw column gridlines
-        for col in 1..spacing as usize {
+        for col in 1..spacing.x as usize {
             let spacing = w_lines_spacing * col as u32;
             let line = PixelsRenderer::draw_line(
                 thickness,
@@ -146,7 +146,7 @@ impl PixelsRenderer {
             self.blit_on(x + spacing, y, &line);
         }
         // Draw row gridlines
-        for row in 1..spacing as usize {
+        for row in 1..spacing.y as usize {
             let spacing = h_lines_spacing * row as u32;
             let line = PixelsRenderer::draw_line(
                 width,
@@ -157,30 +157,34 @@ impl PixelsRenderer {
         }
     }
     fn draw_text(text: &str, font_size: f32, color: Color) -> Pixmap {
-        // Load font face
+        // Load font face with scale
         let font = FontRef::try_from_slice(DEFAULT_FONT).unwrap();
+        let scale = PxScale::from(font_size);
+        let font_scaled = font.as_scaled(scale);
 
         // We need the respective glyphs to know how to cutout our character
         // styling (what it will look like)
         let mut glyphs: Vec<Glyph> = Vec::new();
-        let mut caret = point(0.0, font_size);
-        let scale = PxScale::from(font_size);
+        let mut caret = point(0.0, font_scaled.ascent());
         for c in text.chars() {
-            let glyph = font.glyph_id(c).with_scale_and_position(scale, caret);
+            let glyph = font_scaled
+                .glyph_id(c)
+                .with_scale_and_position(scale, caret);
             let id = glyph.id;
 
             glyphs.push(glyph);
 
             // Move over for next character coming
             // as of now we support only horizontal text
-            caret.x += font.as_scaled(scale).h_advance(id);
+            caret.x += font_scaled.h_advance(id);
         }
 
         // We now have the expected total width and lenght to buffer these
         // pixels of each char in text
         // Double height is needed for possible descent chars and
         // could be done better but as of now this is fine
-        let mut pixmap = Pixmap::new(caret.x as u32, font_size as u32 * 2).unwrap();
+        let text_height = (font_scaled.ascent() - font_scaled.descent()).ceil();
+        let mut pixmap = Pixmap::new(caret.x.ceil() as u32, text_height as u32).unwrap();
         let pixmap_buffer_width = pixmap.width();
         let pixmap_buffer = pixmap.data_mut();
 
@@ -248,32 +252,32 @@ impl PixelsRenderer {
         }
     }
     fn draw_widget<F: Fn(&mut Self)>(&mut self, widget: &dyn Widget, custom_render: Option<F>) {
-        let widget = widget.base();
+        let widget_base = widget.base();
 
-        let color = widget.style.color.into();
+        let color = widget_base.style.color.into();
 
         // Draw widget base with constraints
-        if widget.style.radius > 0 {
+        if widget_base.style.radius > 0 {
             // Offshoot to skia for smooth draws (if needed)
             let rounded_rect = PixelsRenderer::draw_rounded_rect(
-                widget.layout.x as f32,
-                widget.layout.y as f32,
-                widget.layout.w as f32,
-                widget.layout.h as f32,
-                widget.style.radius as f32,
+                widget_base.layout.x as f32,
+                widget_base.layout.y as f32,
+                widget_base.layout.w as f32,
+                widget_base.layout.h as f32,
+                widget_base.style.radius as f32,
                 &color,
             );
-            self.blit_on(widget.layout.x, widget.layout.y, &rounded_rect);
+            self.blit_on(widget_base.layout.x, widget_base.layout.y, &rounded_rect);
         }
 
         let frame_width = self.pixels.texture().width();
         let frame = self.pixels.frame_mut();
 
         // Draw normal widget base
-        if widget.style.radius == 0 {
+        if widget_base.style.radius == 0 {
             let color: [u8; 4] = color.into();
-            for y in widget.layout.y..widget.layout.y + widget.layout.h {
-                for x in widget.layout.x..widget.layout.x + widget.layout.w {
+            for y in widget_base.layout.y..widget_base.layout.y + widget_base.layout.h {
+                for x in widget_base.layout.x..widget_base.layout.x + widget_base.layout.w {
                     // Row major layout follows this formula
                     let idx = row_major(x, y, frame_width);
                     if idx + 3 < frame.len() {
@@ -288,14 +292,52 @@ impl PixelsRenderer {
         }
 
         // Draw text
-        if !widget.text.label.is_empty() {
-            let text = PixelsRenderer::draw_text(&widget.text.label, 32.0, BLACK);
-            self.blit_on(widget.layout.x, widget.layout.y, &text);
+        if !widget_base.text.label.is_empty() {
+            drop(widget_base);
+            let mut widget_base = widget.base_mut();
+
+            // Center text horizontally
+            if widget_base.text.halign {
+                let new_x = widget_base
+                    .layout
+                    .horizontal_center(widget_base.text.get_true_dimensions().x);
+                widget_base.text.pos.x = new_x;
+            }
+
+            // Center text vertically
+            if widget_base.text.valign {
+                let new_y = widget_base
+                    .layout
+                    .vertical_center(widget_base.text.get_true_dimensions().y);
+                widget_base.text.pos.y = new_y;
+            }
+
+            drop(widget_base);
+            let widget_base = widget.base();
+
+            let text = PixelsRenderer::draw_text(
+                &widget_base.text.label,
+                widget_base.text.font_size as f32,
+                BLACK,
+            );
+            self.blit_on(
+                widget_base.layout.x + widget_base.text.pos.x,
+                widget_base.layout.y + widget_base.text.pos.y,
+                &text,
+            );
         }
     }
     fn draw(&mut self, widget: &Box<dyn Widget>) {
         if let Some(widget) = widget.as_any().downcast_ref::<Container>() {
             self.draw_widget(widget, NO_CUSTOM);
+
+            // Create spacing layout
+            match widget.flex {
+                crate::ui::layout::FlexLayout::None => (),
+                crate::ui::layout::FlexLayout::FlexGrid(cols) => {
+                    widget.create_flex_grid_layout(cols)
+                }
+            }
 
             // Children must always sit atop their parents
             for child in &widget.children {
