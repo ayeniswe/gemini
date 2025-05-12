@@ -32,6 +32,16 @@ impl Layout {
             && my >= self.y as f64
             && my <= (self.y + self.h) as f64
     }
+    /// Determines the center of the layout vertically
+    /// with the `rhs` included in the layout
+    pub(crate) fn vertical_center(&self, rhs: u32) -> u32 {
+        (self.h - rhs) / 2
+    }
+    /// Determines the center of the layout horizontally
+    /// with the `rhs` included in the layout
+    pub(crate) fn horizontal_center(&self, rhs: u32) -> u32 {
+        (self.w - rhs) / 2
+    }
 }
 
 /// The `Point` struct defines a simple x and y coordinates
@@ -39,6 +49,14 @@ impl Layout {
 pub struct Point {
     pub x: u32,
     pub y: u32,
+}
+impl From<ab_glyph::Point> for Point {
+    fn from(value: ab_glyph::Point) -> Self {
+        Point {
+            x: value.x as u32,
+            y: value.y as u32,
+        }
+    }
 }
 
 /// A struct representing a grid layout for UI elements.

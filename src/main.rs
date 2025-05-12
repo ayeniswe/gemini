@@ -29,6 +29,35 @@ impl Palette {
     }
 }
 
+// fn main() {
+//     log4rs::init_file("log4rs.yaml", Default::default()).expect("Failed to init logger");
+//     info!("Starting demo UI app...");
+//     let palette = Click::new(Rc::new(RefCell::new(Palette::new())))
+//         .on(MouseButton::Left, |state, window, widget, event| {
+//             widget.style.color = state.borrow().selected.into();
+//             window.request_redraw();
+//         })
+//         .on(MouseButton::Right, |state, window, widget, event| {
+//             state.borrow_mut().selected = GREEN.into();
+//         });
+//     let cnv = Canvas::new()
+//         .set_width(256)
+//         .set_height(256)
+//         .set_label("good")
+//         .set_label_horizontal()
+//         .set_label_vertical()
+//         .set_grid(8, 1)
+//         .set_grid_range((8, 8), 1)
+//         .on_action(Action::ZoomInOut(Zoom::new_with_bounds(
+//             ZoomLevel::Zoom16x,
+//             2,
+//         )))
+//         .set_cells_actions(vec![Action::Click(Box::new(palette))]);
+
+//     let mut d = DOM::new(640, 512);
+//     d.add_widget(cnv);
+//     d.run();
+// }
 fn main() {
     log4rs::init_file("log4rs.yaml", Default::default()).expect("Failed to init logger");
     info!("Starting demo UI app...");
@@ -43,8 +72,11 @@ fn main() {
     let cnv = Canvas::new()
         .set_width(256)
         .set_height(256)
+        .set_label("good")
+        .set_label_horizontal()
+        .set_label_vertical()
         .set_grid(8, 1)
-        .set_grid_range((8,8), 1)
+        .set_grid_range((8, 8), 1)
         .on_action(Action::ZoomInOut(Zoom::new_with_bounds(
             ZoomLevel::Zoom16x,
             2,

@@ -145,6 +145,32 @@ pub trait Widget: Any {
         self.base_mut().style.color = ColorState::new(color);
         self
     }
+    /// Align text in center vertically
+    fn set_label_vertical(self) -> Self
+    where
+        Self: Sized,
+    {
+        let new_y = {
+            let base = self.base();
+            base.layout.vertical_center(base.text.get_true_dimensions().y)
+        };
+        self.base_mut().text.pos.y = new_y;
+
+        self
+    }
+    /// Align text in center horizontally
+    fn set_label_horizontal(self) -> Self
+    where
+        Self: Sized,
+    {
+        let new_x = {
+            let base = self.base();
+            base.layout.horizontal_center(base.text.get_true_dimensions().x)
+        };
+        self.base_mut().text.pos.x = new_x;
+
+        self
+    }
     /// Add s trigger action for the widget
     ///
     /// See `Action` enum for the types of actions avaliable

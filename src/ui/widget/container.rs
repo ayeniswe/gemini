@@ -42,17 +42,17 @@ impl Container {
     pub fn add_widget<T: Widget + 'static>(mut self, widget: T) -> Self {
         if self.halign {
             let new_x = {
-                let child = widget.base();
-                let h_middle = (self.base.borrow().layout.w / 2).abs_diff(child.layout.w / 2);
+                let child = widget.base();                
+                let h_middle = self.base.borrow().layout.horizontal_center(child.layout.w);
                 child.layout.x + h_middle
             };
 
             widget.base_mut().layout.x = new_x;
         }
-        if self.halign {
+        if self.valign {
             let new_y = {
                 let child = widget.base();
-                let v_middle = (self.base.borrow().layout.h / 2).abs_diff(child.layout.h / 2);
+                let v_middle = self.base.borrow().layout.vertical_center(child.layout.h);
                 child.layout.y + v_middle
             };
 

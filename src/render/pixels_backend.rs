@@ -5,15 +5,16 @@ use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Rect, Transform};
 use crate::{
     render::Renderer,
     ui::{
-        color::{Color, BLACK, WHITE}, layout::Point, widget::{canvas::Canvas, container::Container, Widget}
+        color::{Color, BLACK, WHITE},
+        layout::Point,
+        text::DEFAULT_FONT,
+        widget::{canvas::Canvas, container::Container, Widget},
     },
 };
 
 use super::row_major;
 
 type NoCustom = Option<fn(&mut PixelsRenderer)>;
-
-const DEFAULT_FONT: &'static [u8; 146004] = include_bytes!("../../fonts/Roboto-Regular.ttf");
 const NO_CUSTOM: NoCustom = None;
 
 pub struct PixelsRenderer {
@@ -156,30 +157,32 @@ impl PixelsRenderer {
         }
     }
     fn draw_text(text: &str, font_size: f32, color: Color) -> Pixmap {
-        // Load font face
+        // Load font face with scale
         let font = FontRef::try_from_slice(DEFAULT_FONT).unwrap();
+        let scale = PxScale::from(font_size);
+        let font_scaled = font.as_scaled(scale);
 
         // We need the respective glyphs to know how to cutout our character
         // styling (what it will look like)
         let mut glyphs: Vec<Glyph> = Vec::new();
-        let mut caret = point(0.0, font_size);
-        let scale = PxScale::from(font_size);
+        let mut caret = point(0.0, font_scaled.ascent());
         for c in text.chars() {
-            let glyph = font.glyph_id(c).with_scale_and_position(scale, caret);
+            let glyph = font_scaled.glyph_id(c).with_scale_and_position(scale, caret);
             let id = glyph.id;
 
             glyphs.push(glyph);
 
             // Move over for next character coming
             // as of now we support only horizontal text
-            caret.x += font.as_scaled(scale).h_advance(id);
+            caret.x += font_scaled.h_advance(id);
         }
 
         // We now have the expected total width and lenght to buffer these
         // pixels of each char in text
         // Double height is needed for possible descent chars and
         // could be done better but as of now this is fine
-        let mut pixmap = Pixmap::new(caret.x as u32, font_size as u32 * 2).unwrap();
+        let max_height = (font_scaled.ascent() - font_scaled.descent()).ceil();
+        let mut pixmap = Pixmap::new(caret.x as u32, max_height as u32).unwrap();
         let pixmap_buffer_width = pixmap.width();
         let pixmap_buffer = pixmap.data_mut();
 
@@ -288,8 +291,12 @@ impl PixelsRenderer {
 
         // Draw text
         if !widget.text.label.is_empty() {
-            let text = PixelsRenderer::draw_text(&widget.text.label, 32.0, BLACK);
-            self.blit_on(widget.layout.x, widget.layout.y, &text);
+            let text = PixelsRenderer::draw_text(&widget.text.label, widget.text.font_size as f32, BLACK);
+            self.blit_on(
+                widget.layout.x + widget.text.pos.x,
+                widget.layout.y + widget.text.pos.y,
+                &text,
+            );
         }
     }
     fn draw(&mut self, widget: &Box<dyn Widget>) {
