@@ -44,6 +44,7 @@ fn main() {
         .set_width(256)
         .set_height(256)
         .set_grid(8, 1)
+        .set_grid_range((8,8), 1)
         .on_action(Action::ZoomInOut(Zoom::new_with_bounds(
             ZoomLevel::Zoom16x,
             2,

@@ -5,8 +5,7 @@ use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Rect, Transform};
 use crate::{
     render::Renderer,
     ui::{
-        color::{Color, BLACK, WHITE},
-        widget::{canvas::Canvas, container::Container, Widget},
+        color::{Color, BLACK, WHITE}, layout::Point, widget::{canvas::Canvas, container::Container, Widget}
     },
 };
 
@@ -127,16 +126,16 @@ impl PixelsRenderer {
         pos: (u32, u32),
         width: u32,
         height: u32,
-        spacing: u32,
+        spacing: Point,
         color: Color,
         thickness: u32,
     ) {
         let (x, y) = pos;
 
-        let h_lines_spacing = height / spacing;
-        let w_lines_spacing = width / spacing;
+        let h_lines_spacing = height / spacing.y;
+        let w_lines_spacing = width / spacing.x;
         // Draw column gridlines
-        for col in 1..spacing as usize {
+        for col in 1..spacing.x as usize {
             let spacing = w_lines_spacing * col as u32;
             let line = PixelsRenderer::draw_line(
                 thickness,
@@ -146,7 +145,7 @@ impl PixelsRenderer {
             self.blit_on(x + spacing, y, &line);
         }
         // Draw row gridlines
-        for row in 1..spacing as usize {
+        for row in 1..spacing.y as usize {
             let spacing = h_lines_spacing * row as u32;
             let line = PixelsRenderer::draw_line(
                 width,
