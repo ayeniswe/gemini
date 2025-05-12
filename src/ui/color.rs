@@ -38,6 +38,14 @@ impl From<ColorState> for Color {
         }
     }
 }
+impl From<Color> for ColorState {
+    fn from(value: Color) -> Self {
+        ColorState {
+            color: value,
+            ..Default::default()
+        }
+    }
+}
 
 /// Determines how color is applied during rendering.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

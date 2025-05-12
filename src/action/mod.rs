@@ -6,12 +6,10 @@
 //! respond to events like hovering, clicking, or focusing in a structured
 //! and extensible way.
 //!
-use click::Click;
+
+use click::ClickHandler;
 use hover::Hover;
-use winit::{
-    event::{Event, MouseButton},
-    window::Window,
-};
+use winit::{event::Event, window::Window};
 use zoom::Zoom;
 
 use crate::ui::widget::BaseWidget;
@@ -36,14 +34,14 @@ pub enum Action {
     /// Allows the user to zoom in and out of this widget
     ZoomInOut(Zoom),
     /// Allows the user to respond to clicks on the widget
-    LeftClick(Click),
+    Click(Box<dyn ClickHandler>),
 }
 impl Actionable for Action {
     fn apply_action(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<()>) {
         match self {
             Action::Hover(hover) => hover.apply(window, widget, event),
             Action::ZoomInOut(zoom) => zoom.apply(window, widget, event),
-            Action::LeftClick(click) => click.apply(MouseButton::Left, window, widget, event),
+            Action::Click(click) => click.apply(window, widget, event),
         }
     }
 }

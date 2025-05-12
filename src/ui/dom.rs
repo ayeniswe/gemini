@@ -50,7 +50,10 @@ impl DOM {
             cursor_position: PhysicalPosition::default(),
         }
     }
-    fn attach_listeners(window: &Window, node: &Box<dyn Widget>, event: Event<()>) {
+    /// Act on the widget apperance and behaviours based on the
+    /// actions they subscribed to and only triggering action based
+    /// on the actions logic
+    fn apply_actions(window: &Window, node: &Box<dyn Widget>, event: Event<()>) {
         let mut actions = node.action_mut();
         let mut widget = node.base_mut();
         for action in actions.iter_mut() {
@@ -71,9 +74,9 @@ impl DOM {
                 });
             }
         } else if let Some(container) = node.as_any().downcast_ref::<Container>() {
-            for child in &container.children  {
-                DOM::attach_listeners(window, child, event.clone());
-            }   
+            for child in &container.children {
+                DOM::apply_actions(window, child, event.clone());
+            }
         }
     }
     pub fn run(mut self) {
@@ -103,11 +106,9 @@ impl DOM {
                     },
                     _ => (),
                 }
-                // Act on the widget apperance and behaviours based on the
-                // actions they subscribed to and only triggering action based
-                // on the actions logic
+                
                 for node in &self.nodes {
-                    DOM::attach_listeners(&self.window, node, event.clone());
+                    DOM::apply_actions(&self.window, node, event.clone());
                 }
             })
             .unwrap();

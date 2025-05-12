@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use gemini::{
     action::{
-        click::{Click, ClickHandler},
+        click::Click,
         hover::Hover,
         zoom::{Zoom, ZoomLevel},
         Action,
@@ -14,7 +14,7 @@ use gemini::{
     },
 };
 use log::info;
-use winit::window::Window;
+use winit::{event::MouseButton, window::Window};
 
 struct Palette {
     selected: Color,
@@ -28,17 +28,18 @@ impl Palette {
         }
     }
 }
-impl ClickHandler for Palette {
-    fn apply(&mut self, window: &Window, widget: &mut BaseWidget) {
-        widget.style.color.set_color(self.selected);
-        window.request_redraw();
-    }
-}
 
 fn main() {
     log4rs::init_file("log4rs.yaml", Default::default()).expect("Failed to init logger");
     info!("Starting demo UI app...");
-
+    let palette = Click::new(Rc::new(RefCell::new(Palette::new())))
+        .on(MouseButton::Left, |state, window, widget, event| {
+            widget.style.color = state.borrow().selected.into();
+            window.request_redraw();
+        })
+        .on(MouseButton::Right, |state, window, widget, event| {
+            state.borrow_mut().selected = GREEN.into();
+        });
     let cnv = Canvas::new()
         .set_width(256)
         .set_height(256)
@@ -47,10 +48,7 @@ fn main() {
             ZoomLevel::Zoom16x,
             2,
         )))
-        .set_cells_actions(vec![
-            Action::LeftClick(Click::new(Rc::new(RefCell::new(Palette::new())))),
-            Action::Hover(Hover::new(Color::RGBA(235, 235, 235, 75))),
-        ]);
+        .set_cells_actions(vec![Action::Click(Box::new(palette))]);
 
     let mut d = DOM::new(640, 512);
     d.add_widget(cnv);
