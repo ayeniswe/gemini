@@ -57,7 +57,7 @@ impl Canvas {
     /// the canvas grid
     ///
     /// NoOp if `set_grid` was not called before
-    /// 
+    ///
     /// Cheaper to set them manullay with `set_cell_action`
     /// # Panics
     ///
@@ -67,6 +67,7 @@ impl Canvas {
             for y in 0..grid.size as usize {
                 for x in 0..grid.size as usize {
                     let cell = &grid.cells[x][y];
+                    cell.base_mut().id = format!("{},{}", x, y);
                     for action in actions.iter().cloned() {
                         cell.action_mut().push(action);
                     }
@@ -118,7 +119,7 @@ mod tests {
         let c = Canvas::new().set_width(32).set_height(16).set_grid(4, 1);
 
         let mut grid = c.grid.borrow_mut().clone().unwrap();
-        grid.resize(0,0, 16, 32);
+        grid.resize(0, 0, 16, 32);
 
         let cells = grid.cells;
         assert!(
