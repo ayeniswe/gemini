@@ -7,14 +7,14 @@ use winit::{
     window::Window,
 };
 
-use crate::ui::widget::BaseWidget;
+use crate::ui::{sync::Signal, widget::BaseWidget};
 
 /// The `Click` struct allows widgets to have the ability
 /// to respond to any mouse click event
 #[derive(Clone)]
 pub struct Click<State> {
     state: State,
-    button_map: HashMap<MouseButton, Rc<dyn Fn(&mut State, &Window, &mut BaseWidget, Event<()>)>>,
+    button_map: HashMap<MouseButton, Rc<dyn Fn(&mut State, &Window, &mut BaseWidget, Event<Signal>)>>,
 }
 impl<State> Click<State> {
     /// Create a new `Click` action
@@ -36,7 +36,7 @@ impl<State> Click<State> {
     /// - MiddleButton
     /// - BackButton
     /// - ForwardButton
-    pub fn on<F: Fn(&mut State, &Window, &mut BaseWidget, Event<()>) + Clone + 'static>(
+    pub fn on<F: Fn(&mut State, &Window, &mut BaseWidget, Event<Signal>) + Clone + 'static>(
         mut self,
         btn: MouseButton,
         callback: F,
@@ -46,7 +46,7 @@ impl<State> Click<State> {
     }
 }
 impl<State: Clone> ClickHandler for Click<State> {
-    fn apply(&mut self, window: &Window, widget: &mut BaseWidget, e: Event<()>) {
+    fn apply(&mut self, window: &Window, widget: &mut BaseWidget, e: Event<Signal>) {
         match e {
             Event::WindowEvent { ref event, .. } => match event {
                 WindowEvent::CursorMoved { position, .. } => {
@@ -73,6 +73,6 @@ impl<State: Clone> ClickHandler for Click<State> {
 /// users to specify per button type
 /// click actions
 pub trait ClickHandler: DynClone {
-    fn apply(&mut self, window: &Window, widget: &mut BaseWidget, e: Event<()>);
+    fn apply(&mut self, window: &Window, widget: &mut BaseWidget, e: Event<Signal>);
 }
 clone_trait_object!(ClickHandler);

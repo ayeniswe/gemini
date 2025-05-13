@@ -1,9 +1,10 @@
 use std::{
     any::Any,
     cell::{Ref, RefCell, RefMut},
+    sync::Arc,
 };
 
-use crate::action::Action;
+use crate::{action::Action, ui::sync::Thread};
 
 use super::{impl_widget, BaseWidget, Widget};
 /// A struct representing a button widget.
@@ -19,6 +20,7 @@ use super::{impl_widget, BaseWidget, Widget};
 pub struct Button {
     pub base: RefCell<BaseWidget>,
     pub actions: RefCell<Vec<Action>>,
+    emitter: Option<Arc<dyn Thread>>,
 }
 impl Button {
     pub fn new() -> Self {

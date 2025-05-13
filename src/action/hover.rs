@@ -5,8 +5,7 @@ use winit::{
 };
 
 use crate::ui::{
-    color::{Color, ColorMode},
-    widget::BaseWidget,
+    color::{Color, ColorMode}, sync::Signal, widget::BaseWidget
 };
 
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -20,7 +19,7 @@ impl Hover {
             ..Default::default()
         }
     }
-    pub(crate) fn apply(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<()>) {
+    pub(crate) fn apply(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<Signal>) {
         match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CursorMoved { position, .. } => {

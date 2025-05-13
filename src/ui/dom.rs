@@ -1,8 +1,15 @@
+use std::{
+    collections::HashMap,
+    rc::Rc,
+    sync::{Arc, Mutex},
+};
+
 use pixels::{Pixels, SurfaceTexture};
+use rand::Rng;
 use winit::{
     dpi::{LogicalSize, PhysicalPosition},
     event::{Event, WindowEvent},
-    event_loop::EventLoop,
+    event_loop::{EventLoop, EventLoopBuilder, EventLoopProxy},
     window::{Window, WindowBuilder},
 };
 
@@ -11,7 +18,10 @@ use crate::{
     render::{pixels_backend::PixelsRenderer, Renderer as _},
 };
 
-use super::widget::{canvas::Canvas, container::Container, Widget};
+use super::{
+    sync::{Signal, Trigger},
+    widget::{canvas::Canvas, container::Container, Widget},
+};
 
 /// The main entry point for building and managing the UI tree.
 ///
@@ -20,15 +30,23 @@ use super::widget::{canvas::Canvas, container::Container, Widget};
 /// - Handling input events (e.g., mouse movement)
 /// - Triggering redraws and layout updates
 pub struct DOM {
-    nodes: Vec<Box<dyn Widget>>,
+    nodes: Vec<Rc<dyn Widget>>,
     renderer: PixelsRenderer,
     window: Window,
-    event_loop: EventLoop<()>,
+    event_loop: EventLoop<Signal>,
+    proxy: Arc<Mutex<EventLoopProxy<Signal>>>,
     cursor_position: PhysicalPosition<f64>,
+    signals_route: HashMap<u64, Rc<dyn Widget>>,
 }
 impl DOM {
     pub fn new(width: u32, height: u32) -> Self {
-        let event_loop = EventLoop::new().unwrap();
+        let event_loop = EventLoopBuilder::<Signal>::with_user_event()
+            .build()
+            .unwrap();
+
+        // Allow other threads to send info to
+        // main UI thread
+        let proxy = event_loop.create_proxy();
 
         // Window to contain the application
         let window = WindowBuilder::new()
@@ -47,13 +65,15 @@ impl DOM {
             window,
             nodes: Vec::default(),
             event_loop,
+            proxy: Arc::new(Mutex::new(proxy)),
             cursor_position: PhysicalPosition::default(),
+            signals_route: HashMap::default(),
         }
     }
     /// Act on the widget apperance and behaviours based on the
     /// actions they subscribed to and only triggering action based
     /// on the actions logic
-    fn apply_actions(window: &Window, node: &Box<dyn Widget>, event: Event<()>) {
+    fn apply_actions(window: &Window, node: &Rc<dyn Widget>, event: Event<Signal>) {
         let mut actions = node.action_mut();
         let mut widget = node.base_mut();
         for action in actions.iter_mut() {
@@ -76,6 +96,24 @@ impl DOM {
         } else if let Some(container) = node.as_any().downcast_ref::<Container>() {
             for child in &container.children {
                 DOM::apply_actions(window, child, event.clone());
+            }
+        }
+    }
+    /// Widgets may need ui changes off thread
+    /// emitters allow changes to be processed in a queue
+    /// style using `Signal`s
+    fn apply_emitters(&mut self, widget: &Rc<dyn Widget>) {
+        // Some widget may be connected to user thread
+        // We need a unique mapping for event signal routing
+        if let Some(emit) = widget.emitter().cloned() {
+            let uid: u64 = rand::thread_rng().gen();
+            self.signals_route.insert(uid, widget.clone());
+            emit.start(Trigger::new(self.proxy.clone(), uid));
+        }
+
+        if let Some(container) = widget.as_any().downcast_ref::<Container>() {
+            for child in &container.children {
+                self.apply_emitters(child);
             }
         }
     }
@@ -104,9 +142,25 @@ impl DOM {
                         }
                         _ => (),
                     },
+                    Event::UserEvent(ref signal) => match signal {
+                        Signal::Update(data) => {
+                            // We need to route the signals in a way to denote what
+                            // widget to target
+                            let (id, update) = data;
+                            let widget = self.signals_route.get(&id).unwrap();
+
+                            // Apply changes on main thread
+                            update(&mut widget.base_mut());
+
+                            // Costly if no changes occured but
+                            // this is left up to the user
+                            // care on performance
+                            self.window.request_redraw();
+                        }
+                    },
                     _ => (),
                 }
-                
+
                 for node in &self.nodes {
                     DOM::apply_actions(&self.window, node, event.clone());
                 }
@@ -114,6 +168,11 @@ impl DOM {
             .unwrap();
     }
     pub fn add_widget<T: Widget + 'static>(&mut self, widget: T) {
-        self.nodes.push(Box::new(widget));
+        let widget: Rc<dyn Widget> = Rc::new(widget);
+        let widget_clone = widget.clone();
+        self.nodes.push(widget);
+
+        // Auto-start any emitters for widgets
+        self.apply_emitters(&widget_clone);
     }
 }

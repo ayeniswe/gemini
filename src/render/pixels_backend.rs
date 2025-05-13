@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use ab_glyph::{point, Font as _, FontRef, Glyph, PxScale, ScaleFont as _};
 use pixels::Pixels;
 use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Rect, Transform};
@@ -327,7 +329,7 @@ impl PixelsRenderer {
             );
         }
     }
-    fn draw(&mut self, widget: &Box<dyn Widget>) {
+    fn draw(&mut self, widget: &Rc<dyn Widget>) {
         if let Some(widget) = widget.as_any().downcast_ref::<Container>() {
             self.draw_widget(widget, NO_CUSTOM);
 
@@ -360,7 +362,7 @@ impl Renderer for PixelsRenderer {
     fn present(&mut self) {
         self.pixels.render().unwrap();
     }
-    fn draw(&mut self, widget: &Box<dyn Widget>) {
+    fn draw(&mut self, widget: &Rc<dyn Widget>) {
         self.draw(widget);
     }
 }

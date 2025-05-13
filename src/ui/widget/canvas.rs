@@ -1,11 +1,15 @@
 use std::{
     any::Any,
     cell::{Ref, RefCell, RefMut},
+    sync::Arc,
 };
 
 use crate::{
     action::Action,
-    ui::layout::{Col, Grid, Point, Row},
+    ui::{
+        layout::{Col, Grid, Point, Row},
+        sync::Thread,
+    },
 };
 
 use super::{impl_widget, BaseWidget, Widget};
@@ -19,10 +23,11 @@ use super::{impl_widget, BaseWidget, Widget};
 ///
 /// The `Canvas` can be used as a drawing surface, allowing you to add
 /// elements like shapes, images, or other visual content.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Canvas {
     pub base: RefCell<BaseWidget>,
     pub actions: RefCell<Vec<Action>>,
+    emitter: Option<Arc<dyn Thread>>,
     pub grid: RefCell<Option<Grid>>,
 }
 impl Canvas {
