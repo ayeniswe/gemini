@@ -4,7 +4,7 @@ use winit::{
     window::Window,
 };
 
-use crate::ui::widget::BaseWidget;
+use crate::ui::{sync::Signal, widget::BaseWidget};
 
 /// The UI zoom levels for user scaling
 #[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd)]
@@ -65,7 +65,7 @@ impl Zoom {
             ..Default::default()
         }
     }
-    pub(crate) fn apply(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<()>) {
+    pub(crate) fn apply(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<Signal>) {
         match event {
             Event::WindowEvent { event, .. } => match event {
                 MouseWheel { delta, .. } => match delta {

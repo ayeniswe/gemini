@@ -1,5 +1,3 @@
-use std::default;
-
 use crate::ui::widget::cell::Cell;
 
 /// A struct representing the position and size of a UI element.
@@ -162,19 +160,19 @@ pub enum FlexLayout {
     /// ```
     /// let mut central_panel = Container::new().set_flex_layout(FlexLayout::FlexGrid(4))
     /// ```
-    /// 
-    /// How the layout would look if 5 widgets 
+    ///
+    /// How the layout would look if 5 widgets
     /// were stored in the container:
-    /// 
+    ///
     /// ```
     /// -----------------
     /// | w | w | w | w |
     /// | w |            
     /// -----------------                   
     /// ```
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// If the `Col` specified is 0 it will panic
     FlexGrid(Col),
 }

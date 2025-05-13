@@ -16,6 +16,7 @@
 use std::{
     any::Any,
     cell::{Ref, RefMut},
+    sync::Arc,
 };
 
 use crate::action::Action;
@@ -25,6 +26,7 @@ use super::{
     layout::Layout,
     state::State,
     style::Style,
+    sync::Thread,
     text::Text,
 };
 
@@ -81,6 +83,8 @@ pub trait Widget: Any {
     fn base(&self) -> Ref<'_, BaseWidget>;
     /// Returns a mutable reference to the widget's base properties.
     fn base_mut(&self) -> RefMut<'_, BaseWidget>;
+    /// Returns the emitter
+    fn emitter(&self) -> Option<&Arc<dyn Thread>>;
     /// Set the inside text for the widget
     fn set_label(self, label: &str) -> Self
     where
@@ -179,12 +183,18 @@ pub trait Widget: Any {
         self.action_mut().push(action);
         self
     }
+    /// Allows an emitter to be attached to this widget instance
+    /// for triggering updates to the widget when signals come
+    /// through UI event proxy
+    fn connect<T: Thread + 'static>(self, emitter: T) -> Self
+    where
+        Self: Sized;
 }
 
 /// Implements the [`Widget`] trait for a struct with common UI fields.
 ///
 /// This macro generates an implementation of the `Widget` trait for
-/// a given type, assuming it has the `base` field.
+/// a given type, assuming it has the `base` and `actions` field.
 macro_rules! impl_widget {
     ($type:ty) => {
         impl Widget for $type {
@@ -202,6 +212,13 @@ macro_rules! impl_widget {
             }
             fn action_mut(&self) -> RefMut<'_, Vec<Action>> {
                 self.actions.borrow_mut()
+            }
+            fn emitter(&self) -> Option<&Arc<dyn Thread>> {
+                self.emitter.as_ref()
+            }
+            fn connect<T: Thread + 'static>(mut self, emitter: T) -> Self {
+                self.emitter = Some(Arc::new(emitter));
+                self
             }
         }
     };

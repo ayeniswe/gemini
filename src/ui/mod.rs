@@ -18,3 +18,4 @@ pub mod text;
 pub mod widget;
 pub mod dom;
 pub mod state;
+pub mod sync;

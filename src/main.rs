@@ -4,6 +4,9 @@ use std::{
     fs::File,
     io::{BufReader, Read},
     rc::Rc,
+    sync::{Arc, Mutex},
+    thread,
+    time::Duration,
 };
 
 use crypto::verify_checksum;
@@ -15,7 +18,11 @@ use gemini::{
         Action,
     },
     ui::{
-        color::{Color, BLACK, BLUE, GREEN, RED, WHITE}, dom::DOM, layout::FlexLayout, widget::{canvas::Canvas, container::Container, BaseWidget, Widget as _}
+        color::{Color, BLACK, BLUE, GREEN, RED, WHITE},
+        dom::DOM,
+        layout::FlexLayout,
+        sync::{Emitter, Trigger},
+        widget::{canvas::Canvas, container::Container, BaseWidget, Widget as _},
     },
 };
 use hex::decode;
@@ -23,7 +30,8 @@ use log::info;
 use openssl::hash::hash;
 use openssl::hash::{self, MessageDigest};
 use parse::System;
-use winit::{event::MouseButton, window::Window};
+use rand::{seq::SliceRandom as _, thread_rng};
+use winit::{event::MouseButton, event_loop::EventLoopProxy, window::Window};
 
 struct Palette {
     selected: Color,
@@ -70,6 +78,31 @@ pub mod parse;
 //     d.add_widget(cnv);
 //     d.run();
 // }
+struct SystemIndex {
+    color: Color,
+}
+impl SystemIndex {
+    pub fn new() -> Self {
+        Self { color: RED }
+    }
+}
+impl Emitter for SystemIndex {
+    fn run(&self, trigger: Trigger) {
+        let choices = vec![GREEN, BLACK, BLUE];
+
+        loop {
+            let mut rng = thread_rng();
+            let color = *choices.choose(&mut rng).unwrap();
+
+            trigger.trigger_update(move |widget| {
+                widget.style.color.set_color(color);
+            });
+
+            thread::sleep(Duration::from_secs(1))
+        }
+    }
+}
+
 fn main() {
     log4rs::init_file("log4rs.yaml", Default::default()).expect("Failed to init logger");
     info!("Starting demo UI app...");
@@ -93,6 +126,7 @@ fn main() {
         .set_gap(5)
         .set_flex_layout(FlexLayout::FlexGrid(4))
         .set_color(RED);
+
     for system in systems.iter().enumerate() {
         let (idx, (name, data)) = system;
         central_panel.add_widget(
@@ -103,12 +137,13 @@ fn main() {
                 .set_label_size(12)
                 .set_label_horizontal()
                 .set_label_vertical()
+                .connect(SystemIndex::new())
                 .set_color(WHITE),
         );
     }
     dom.add_widget(central_panel);
 
-    /// Should be last command
-    /// Acts as the final entrypoint of entire GUI application
+    // Should be last command
+    // Acts as the final entrypoint of entire GUI application
     dom.run();
 }

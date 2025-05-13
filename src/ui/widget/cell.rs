@@ -1,17 +1,17 @@
 use std::{
     any::Any,
     cell::{Ref, RefCell, RefMut},
+    sync::Arc,
 };
 
-
-use crate::action::Action;
+use crate::{action::Action, ui::sync::Thread};
 
 use super::{impl_widget, BaseWidget, Widget};
 
 /// A struct representing a cell in a grid.
 ///
 /// The `Cell` struct represents a single unit in a grid layout. It
-/// has the functionality of a `BaseWidget`, which includes common properties and 
+/// has the functionality of a `BaseWidget`, which includes common properties and
 /// behaviors for all widgets, while the cell itself is used as part of a
 /// larger grid system for arranging and interacting with UI elements
 ///
@@ -22,6 +22,7 @@ use super::{impl_widget, BaseWidget, Widget};
 pub struct Cell {
     pub base: RefCell<BaseWidget>,
     pub actions: RefCell<Vec<Action>>,
+    emitter: Option<Arc<dyn Thread>>,
 }
 impl Cell {
     pub fn new() -> Self {

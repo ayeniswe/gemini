@@ -12,7 +12,7 @@ use hover::Hover;
 use winit::{event::Event, window::Window};
 use zoom::Zoom;
 
-use crate::ui::widget::BaseWidget;
+use crate::ui::{sync::Signal, widget::BaseWidget};
 
 pub mod click;
 pub mod hover;
@@ -37,7 +37,7 @@ pub enum Action {
     Click(Box<dyn ClickHandler>),
 }
 impl Actionable for Action {
-    fn apply_action(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<()>) {
+    fn apply_action(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<Signal>) {
         match self {
             Action::Hover(hover) => hover.apply(window, widget, event),
             Action::ZoomInOut(zoom) => zoom.apply(window, widget, event),
@@ -49,5 +49,5 @@ pub(crate) trait Actionable {
     /// Decides the actions to apply to the widget base design
     ///
     /// This dispatches the event down to the appropriate action handler
-    fn apply_action(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<()>);
+    fn apply_action(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<Signal>);
 }

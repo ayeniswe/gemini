@@ -1,11 +1,16 @@
 use std::{
     any::Any,
     cell::{Ref, RefCell, RefMut},
+    rc::Rc,
+    sync::Arc,
 };
 
 use crate::{
     action::Action,
-    ui::layout::{Col, FlexLayout},
+    ui::{
+        layout::{Col, FlexLayout},
+        sync::Thread,
+    },
 };
 
 use super::{impl_widget, BaseWidget, Widget};
@@ -22,7 +27,8 @@ use super::{impl_widget, BaseWidget, Widget};
 pub struct Container {
     pub base: RefCell<BaseWidget>,
     pub actions: RefCell<Vec<Action>>,
-    pub children: Vec<Box<dyn Widget>>,
+    emitter: Option<Arc<dyn Thread>>,
+    pub children: Vec<Rc<dyn Widget>>,
     pub flex: FlexLayout,
     valign: bool,
     halign: bool,
@@ -54,10 +60,12 @@ impl Container {
         self.flex = layout;
         self
     }
+    /// Sets up a flex grid layout to allows widgets
+    /// to organize widgets in grid flow fashion
     pub(crate) fn create_flex_grid_layout(&self, cols: Col) {
         assert!(cols > 0);
 
-        let mut prev: Option<&Box<dyn Widget>> = None;
+        let mut prev: Option<&Rc<dyn Widget>> = None;
 
         let mut row = 0;
         let mut col = 0;
@@ -112,7 +120,7 @@ impl Container {
                 let new_y = {
                     let child_base = child.base();
 
-                    /// The possibility of other rows spaces being filled
+                    // The possibility of other rows spaces being filled
                     let rows_max_spacing = child_base.layout.h * rows;
                     // The full total spacing a grid column could take
                     let max_col_spacing = rows_max_spacing + gaps_factor_col;
@@ -136,7 +144,7 @@ impl Container {
         }
     }
     pub fn add_widget<T: Widget + 'static>(&mut self, widget: T) {
-        self.children.push(Box::new(widget));
+        self.children.push(Rc::new(widget));
     }
 }
 impl_widget! {Container}
