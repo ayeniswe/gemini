@@ -20,6 +20,8 @@ pub struct Text {
     pub label: String,
     pub font_size: u32,
     pub pos: Point,
+    pub(crate) valign: bool,
+    pub(crate) halign: bool,
 }
 impl Text {
     /// Get the perfect display height and width for text
@@ -40,8 +42,10 @@ impl Default for Text {
     fn default() -> Self {
         Self {
             label: Default::default(),
-            font_size: 32,
+            font_size: 12,
             pos: Default::default(),
+            valign: false,
+            halign: false
         }
     }
 }

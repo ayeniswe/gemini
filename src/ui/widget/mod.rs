@@ -89,6 +89,14 @@ pub trait Widget: Any {
         self.base_mut().text.label = label.into();
         self
     }
+    /// Set the font size of the inside text
+    fn set_label_size(self, size: u32) -> Self
+    where
+        Self: Sized,
+    {
+        self.base_mut().text.font_size = size;
+        self
+    }
     /// Set a unique id for widget
     fn set_id(self, id: &str) -> Self
     where
@@ -150,12 +158,7 @@ pub trait Widget: Any {
     where
         Self: Sized,
     {
-        let new_y = {
-            let base = self.base();
-            base.layout.vertical_center(base.text.get_true_dimensions().y)
-        };
-        self.base_mut().text.pos.y = new_y;
-
+        self.base_mut().text.valign = true;
         self
     }
     /// Align text in center horizontally
@@ -163,12 +166,7 @@ pub trait Widget: Any {
     where
         Self: Sized,
     {
-        let new_x = {
-            let base = self.base();
-            base.layout.horizontal_center(base.text.get_true_dimensions().x)
-        };
-        self.base_mut().text.pos.x = new_x;
-
+        self.base_mut().text.halign = true;
         self
     }
     /// Add s trigger action for the widget

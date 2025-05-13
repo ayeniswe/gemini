@@ -1,3 +1,5 @@
+use std::default;
+
 use crate::ui::widget::cell::Cell;
 
 /// A struct representing the position and size of a UI element.
@@ -35,12 +37,12 @@ impl Layout {
     /// Determines the center of the layout vertically
     /// with the `rhs` included in the layout
     pub(crate) fn vertical_center(&self, rhs: u32) -> u32 {
-        (self.h - rhs) / 2
+        (self.h.saturating_sub(rhs)) / 2
     }
     /// Determines the center of the layout horizontally
     /// with the `rhs` included in the layout
     pub(crate) fn horizontal_center(&self, rhs: u32) -> u32 {
-        (self.w - rhs) / 2
+        (self.w.saturating_sub(rhs)) / 2
     }
 }
 
@@ -145,3 +147,34 @@ impl Grid {
 
 pub type Row = usize;
 pub type Col = usize;
+
+/// The `FlexLayout` provides a variety of ways to organize
+/// the container of widgets in a uniform way
+#[derive(Default, Clone)]
+pub enum FlexLayout {
+    #[default]
+    /// Default for `Container` widget
+    None,
+    /// Layout a container as a grid with a specific amount of
+    /// columns
+    ///
+    /// ## Example
+    /// ```
+    /// let mut central_panel = Container::new().set_flex_layout(FlexLayout::FlexGrid(4))
+    /// ```
+    /// 
+    /// How the layout would look if 5 widgets 
+    /// were stored in the container:
+    /// 
+    /// ```
+    /// -----------------
+    /// | w | w | w | w |
+    /// | w |            
+    /// -----------------                   
+    /// ```
+    /// 
+    /// # Panics
+    /// 
+    /// If the `Col` specified is 0 it will panic
+    FlexGrid(Col),
+}
