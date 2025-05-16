@@ -11,6 +11,7 @@ use std::rc::Rc;
 use crate::ui::widget::Widget;
 
 pub mod pixels_backend;
+pub mod pre;
 
 /// A trait for rendering UI components.
 ///

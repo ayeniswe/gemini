@@ -3,6 +3,7 @@ pub const GREEN: Color = Color::RGBA(0, 255, 0, 255);
 pub const BLUE: Color = Color::RGBA(0, 0, 255, 255);
 pub const WHITE: Color = Color::RGBA(255, 255, 255, 255);
 pub const BLACK: Color = Color::RGBA(0, 0, 0, 255);
+pub const YELLOW: Color = Color::RGBA(255, 255, 0, 255);
 pub const TRANSPARENT: Color = Color::RGBA(0, 0, 0, 0);
 
 /// Represents the current color settings used for rendering.
@@ -127,7 +128,7 @@ impl Color {
 }
 impl Default for Color {
     fn default() -> Self {
-        WHITE
+        TRANSPARENT
     }
 }
 impl From<Color> for (u8, u8, u8, u8) {
