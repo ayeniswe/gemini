@@ -15,7 +15,7 @@ use winit::{
 
 use crate::{
     action::Actionable,
-    render::{pixels_backend::PixelsRenderer, Renderer as _},
+    render::{pixels_backend::PixelsRenderer, pre::PreRenderer, Renderer as _},
 };
 
 use super::{
@@ -32,6 +32,7 @@ use super::{
 pub struct DOM {
     nodes: Vec<Rc<dyn Widget>>,
     renderer: PixelsRenderer,
+    pre_renderer: PreRenderer,
     window: Window,
     event_loop: EventLoop<Signal>,
     proxy: Arc<Mutex<EventLoopProxy<Signal>>>,
@@ -61,6 +62,7 @@ impl DOM {
         let pixels = Pixels::new(size.width, size.height, surface_texture).unwrap();
 
         Self {
+            pre_renderer: PreRenderer::new(),
             renderer: PixelsRenderer::new(pixels),
             window,
             nodes: Vec::default(),
@@ -135,6 +137,8 @@ impl DOM {
                             self.renderer.clear();
 
                             for node in &self.nodes {
+                                self.pre_renderer.adjust(node);
+                                
                                 self.renderer.draw(node);
                             }
 

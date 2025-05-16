@@ -1,0 +1,41 @@
+use std::{
+    any::Any,
+    cell::{Ref, RefCell, RefMut},
+    sync::Arc,
+};
+
+use crate::{action::Action, ui::sync::Thread};
+
+use super::{impl_widget, BaseWidget, Widget};
+
+/// A struct representing a heading widget.
+///
+/// The `Heading` struct represents a heading h1 h2 h3 UI element, typically used
+/// for header above section. 
+/// 
+/// The `Heading` struct includes extra functionalities specific to 
+/// headings
+#[derive(Default, Clone)]
+pub struct Heading {
+    pub base: RefCell<BaseWidget>,
+    pub actions: RefCell<Vec<Action>>,
+    emitter: Option<Arc<dyn Thread>>,
+}
+impl Heading {
+    pub fn new() -> Self {
+        Heading::default()
+    }
+    pub fn set_large_heading(self) -> Self {
+        self.base.borrow_mut().text.font_size = 32;
+        self
+    }
+    pub fn set_medium_heading(self) -> Self {
+        self.base.borrow_mut().text.font_size = 24;
+        self
+    }
+    pub fn set_small_heading(self) -> Self {
+        self.base.borrow_mut().text.font_size = 18;
+        self
+    }
+}
+impl_widget! {Heading}

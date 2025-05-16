@@ -34,6 +34,8 @@ pub mod button;
 pub mod canvas;
 pub(crate) mod cell;
 pub mod container;
+pub mod heading;
+pub mod label;
 
 /// A base struct representing a generic UI widget.
 ///

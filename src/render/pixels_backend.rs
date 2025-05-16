@@ -19,11 +19,11 @@ use super::row_major;
 type NoCustom = Option<fn(&mut PixelsRenderer)>;
 const NO_CUSTOM: NoCustom = None;
 
-pub struct PixelsRenderer {
+pub(crate) struct PixelsRenderer {
     pixels: Pixels,
 }
 impl PixelsRenderer {
-    pub fn new(pixels: Pixels) -> Self {
+    pub(crate) fn new(pixels: Pixels) -> Self {
         Self { pixels }
     }
     /// Returns either black or white based on the perceived brightness of a background color.
@@ -219,38 +219,29 @@ impl PixelsRenderer {
         pixmap
     }
     fn draw_canvas(&mut self, widget: &Canvas) {
-        if widget.grid.borrow().is_none() {
-            self.draw_widget(widget, NO_CUSTOM);
-        } else {
+        if let Some(grid) = &mut *widget.grid.borrow_mut() {
             self.draw_widget(
                 widget,
                 Some(|renderer: &mut PixelsRenderer| {
-                    if let Some(grid) = &mut *widget.grid.borrow_mut() {
-                        let widget = widget.base();
+                    let widget = widget.base();
 
-                        // Draw gridlines
-                        renderer.draw_gridlines(
-                            (widget.layout.x, widget.layout.y),
-                            widget.layout.w,
-                            widget.layout.h,
-                            grid.size,
-                            widget.style.color.into(),
-                            grid.thickness,
-                        );
+                    // Draw gridlines
+                    renderer.draw_gridlines(
+                        (widget.layout.x, widget.layout.y),
+                        widget.layout.w,
+                        widget.layout.h,
+                        grid.size,
+                        widget.style.color.into(),
+                        grid.thickness,
+                    );
 
-                        // Draw cells (thickness of gridlines are accounted for)
-                        grid.resize(
-                            widget.layout.x,
-                            widget.layout.y,
-                            widget.layout.h,
-                            widget.layout.w,
-                        );
-                        grid.on_cell(|_, c| {
-                            renderer.draw_widget(c, NO_CUSTOM);
-                        });
-                    }
+                    grid.on_cell(|_, c| {
+                        renderer.draw_widget(c, NO_CUSTOM);
+                    });
                 }),
             );
+        } else {
+            self.draw_widget(widget, NO_CUSTOM);
         }
     }
     fn draw_widget<F: Fn(&mut Self)>(&mut self, widget: &dyn Widget, custom_render: Option<F>) {
@@ -295,28 +286,6 @@ impl PixelsRenderer {
 
         // Draw text
         if !widget_base.text.label.is_empty() {
-            drop(widget_base);
-            let mut widget_base = widget.base_mut();
-
-            // Center text horizontally
-            if widget_base.text.halign {
-                let new_x = widget_base
-                    .layout
-                    .horizontal_center(widget_base.text.get_true_dimensions().x);
-                widget_base.text.pos.x = new_x;
-            }
-
-            // Center text vertically
-            if widget_base.text.valign {
-                let new_y = widget_base
-                    .layout
-                    .vertical_center(widget_base.text.get_true_dimensions().y);
-                widget_base.text.pos.y = new_y;
-            }
-
-            drop(widget_base);
-            let widget_base = widget.base();
-
             let text = PixelsRenderer::draw_text(
                 &widget_base.text.label,
                 widget_base.text.font_size as f32,
@@ -332,14 +301,6 @@ impl PixelsRenderer {
     fn draw(&mut self, widget: &Rc<dyn Widget>) {
         if let Some(widget) = widget.as_any().downcast_ref::<Container>() {
             self.draw_widget(widget, NO_CUSTOM);
-
-            // Create spacing layout
-            match widget.flex {
-                crate::ui::layout::FlexLayout::None => (),
-                crate::ui::layout::FlexLayout::FlexGrid(cols) => {
-                    widget.create_flex_grid_layout(cols)
-                }
-            }
 
             // Children must always sit atop their parents
             for child in &widget.children {

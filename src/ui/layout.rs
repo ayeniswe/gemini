@@ -158,7 +158,7 @@ pub enum FlexLayout {
     ///
     /// ## Example
     /// ```
-    /// let mut central_panel = Container::new().set_flex_layout(FlexLayout::FlexGrid(4))
+    /// let mut central_panel = Container::new().set_flex_layout(FlexLayout::Grid(4))
     /// ```
     ///
     /// How the layout would look if 5 widgets
@@ -174,5 +174,25 @@ pub enum FlexLayout {
     /// # Panics
     ///
     /// If the `Col` specified is 0 it will panic
-    FlexGrid(Col),
+    Grid(Col),
+    /// Layout a container as a column
+    ///
+    /// ## Example
+    /// ```
+    /// let mut central_panel = Container::new().set_flex_layout(FlexLayout::Col)
+    /// ```
+    ///
+    /// How the layout would look if 5 widgets
+    /// were stored in the container:
+    ///
+    /// ```
+    /// -----
+    /// | w |
+    /// | w |            
+    /// | w |            
+    /// | w |            
+    /// | w |            
+    /// -----                 
+    /// ```
+    Col,
 }
