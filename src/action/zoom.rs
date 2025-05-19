@@ -19,7 +19,7 @@ pub enum ZoomLevel {
     // Zoom at 16x scale
     Zoom16x,
 }
-impl From<ZoomLevel> for f32 {
+impl From<ZoomLevel> for f64 {
     fn from(value: ZoomLevel) -> Self {
         match value {
             ZoomLevel::Zoom2x => 2.0,
@@ -44,7 +44,7 @@ pub struct Zoom {
     scale: ZoomLevel,
     /// The amount of steps in/out a zoom action is bounded to
     steps: Option<u32>,
-    lower_upper: Option<(u32, u32, u32, u32)>,
+    lower_upper: Option<(f64, f64, f64, f64)>,
 }
 impl Zoom {
     /// Create a new `Zoom` action
@@ -72,22 +72,23 @@ impl Zoom {
                     MouseScrollDelta::LineDelta(_, y) => {
                         debug!("triggered zoom in/out for widget: {}", widget.id);
 
-                        let scale: f32 = self.scale.into();
+                        let scale: f64 = self.scale.into();
 
                         // Apply scaling factor
-                        let scaled_w = (widget.layout.w as f32 + (y * scale)) as u32;
-                        let scaled_h = (widget.layout.h as f32 + (y * scale)) as u32;
+                        let scaled_w = widget.layout.w + (y as f64 * scale);
+                        let scaled_h = widget.layout.h + (y as f64 * scale);
 
                         // Create bounds of zooming in and out if applicable (ONLY ONCE)
                         if self.lower_upper.is_none() {
                             if let Some(steps) = &self.steps {
-                                let steps = scale as u32 * steps;
+                                let steps = (scale as u32 * steps) as f64;
 
                                 let (min_h, max_h, min_w, max_w) = (
-                                    widget.layout.h.abs_diff(steps),
-                                    (widget.layout.h + steps).min(window.inner_size().height),
-                                    widget.layout.w.abs_diff(steps),
-                                    (widget.layout.w + steps).min(window.inner_size().width),
+                                    (widget.layout.h - steps).abs(),
+                                    (widget.layout.h + steps)
+                                        .min(window.inner_size().height as f64),
+                                    (widget.layout.w - steps).abs(),
+                                    (widget.layout.w + steps).min(window.inner_size().width as f64),
                                 );
                                 self.lower_upper = Some((min_h, max_h, min_w, max_w));
 

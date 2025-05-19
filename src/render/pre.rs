@@ -28,10 +28,10 @@ impl PreRenderer {
                 widget_base.text.pos.y = new_y;
             }
             // Auto-inherit layout if no specfied
-            if widget_base.layout.w == 0 {
+            if widget_base.layout.w == 0.0 {
                 widget_base.layout.w = widget_base.text.get_true_dimensions().x
             }
-            if widget_base.layout.h == 0 {
+            if widget_base.layout.h == 0.0 {
                 widget_base.layout.h = widget_base.text.get_true_dimensions().y
             }
         }

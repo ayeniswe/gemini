@@ -5,8 +5,6 @@ use std::{
     sync::Arc,
 };
 
-use log::debug;
-
 use crate::{
     action::Action,
     ui::{
@@ -34,7 +32,7 @@ pub struct Container {
     pub flex: FlexLayout,
     valign: bool,
     halign: bool,
-    gap: u32,
+    gap: f64,
 }
 impl Container {
     pub fn new() -> Self {
@@ -53,7 +51,7 @@ impl Container {
         self
     }
     /// Set a gap size between every child in container
-    pub fn set_gap(mut self, gap: u32) -> Self {
+    pub fn set_gap(mut self, gap: f64) -> Self {
         self.gap = gap;
         self
     }
@@ -73,6 +71,8 @@ impl Container {
     /// for children widgets
     pub(crate) fn create_normal_layout(&self) {
         for child in &self.children {
+            self.snap_to_parent(child);
+
             if self.halign {
                 let new_x = {
                     let child_base = child.base();
@@ -87,8 +87,6 @@ impl Container {
                 };
                 child.base_mut().layout.y = new_y;
             }
-
-            self.snap_to_parent(child);
         }
     }
     /// Organize widgets in grid flow fashion
@@ -98,18 +96,20 @@ impl Container {
     pub(crate) fn create_flex_grid_layout(&self, cols: Col) {
         assert!(cols > 0);
 
+        if self.children.is_empty() {
+            return;
+        }
+
         let mut prev: Option<&Rc<dyn Widget>> = None;
 
         let mut row = 0;
         let mut col = 0;
 
-        let rows = self.children.len().div_ceil(cols) as u32;
+        let cols = cols as f64;
+        let rows = f64::max(self.children.len().div_ceil(cols as usize) as f64, 1.0);
 
-        let gaps_factor_col = self.gap * (rows.saturating_sub(1));
-        let gaps_factor_row = self.gap * (cols as u32 - 1);
-
-        let width_share = (self.base.borrow().layout.w / cols as u32) - gaps_factor_row;
-        let height_share = (self.base.borrow().layout.h / rows) - gaps_factor_col;
+        let gaps_factor_col = self.gap * (rows - 1.0);
+        let gaps_factor_row = self.gap * (cols - 1.0);
 
         for child in self.children.iter().enumerate() {
             let (idx, child) = child;
@@ -130,10 +130,6 @@ impl Container {
             ////////////
             /////// OVERFLOWING PROTECTION
             ////
-            let new_w = { child.base().layout.w.min(width_share) };
-            child.base_mut().layout.w = new_w;
-            let new_h = { child.base().layout.h.min(height_share) };
-            child.base_mut().layout.h = new_h;
 
             ////////////
             /////// ALIGMENT
@@ -143,7 +139,7 @@ impl Container {
                     let child_base = child.base();
 
                     // The possibility of other columns spaces being filled
-                    let cols_max_spacing = child_base.layout.w * cols as u32;
+                    let cols_max_spacing = child_base.layout.w * cols;
                     // The full total spacing a grid row could take
                     let max_row_spacing = cols_max_spacing + gaps_factor_row;
 
@@ -172,8 +168,9 @@ impl Container {
             if let Some(prev) = prev {
                 let mut child_base = child.base_mut();
                 child_base.layout.x =
-                    (col * (prev.base().layout.w + self.gap)) + child_base.layout.x;
-                child_base.layout.y = row * (prev.base().layout.h + self.gap) + child_base.layout.y;
+                    (col as f64 * (prev.base().layout.w + self.gap)) + child_base.layout.x;
+                child_base.layout.y =
+                    row as f64 * (prev.base().layout.h + self.gap) + child_base.layout.y;
             }
 
             prev = Some(child);
@@ -194,9 +191,8 @@ impl Container {
 
         let mut prev: Option<&Rc<dyn Widget>> = None;
 
-        let rows = self.children.len() as u32;
-        let gaps_factor_col = self.gap * (rows.saturating_sub(1));
-        let height_share = (self.base.borrow().layout.h / rows).abs_diff(gaps_factor_col);
+        let rows = self.children.len() as f64;
+        let gaps_factor_col = self.gap * (rows - 1.0);
 
         for child in self.children.iter() {
             self.snap_to_parent(child);
@@ -204,8 +200,6 @@ impl Container {
             ////////////
             /////// OVERFLOWING PROTECTION
             //
-            // let new_h = { child.base().layout.h.min(height_share) };
-            // child.base_mut().layout.h = new_h;
 
             ////////////
             /////// ALIGMENT
@@ -247,8 +241,8 @@ impl Container {
     /// to be inside the parent
     pub(crate) fn snap_to_parent(&self, child: &Rc<dyn Widget>) {
         let mut child_base = child.base_mut();
-        child_base.layout.x += self.base.borrow().layout.x;
-        child_base.layout.y += self.base.borrow().layout.y;
+        child_base.layout.x = self.base.borrow().layout.x;
+        child_base.layout.y = self.base.borrow().layout.y;
     }
     pub fn add_widget<T: Widget + 'static>(&mut self, widget: T) {
         self.children.push(Rc::new(widget));

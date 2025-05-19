@@ -49,14 +49,21 @@ impl PixelsRenderer {
     /// to the destination frame managed by the `pixels` instance. It assumes both
     /// the source and destination have the same pixel format (e.g., RGBA, 4 bytes per pixel)
     /// and that the destination frame is large enough to accommodate the pixmap.
-    fn blit_on(&mut self, offset_x: u32, offset_y: u32, map: &Pixmap) {
+    fn blit_on(&mut self, offset_x: i32, offset_y: i32, map: &Pixmap) {
         let frame_width = self.pixels.texture().width();
         let frame = self.pixels.frame_mut();
         let map_buffer = map.data();
 
         for y in 0..map.height() {
             for x in 0..map.width() {
-                let frame_idx = row_major(x + offset_x, y + offset_y, frame_width);
+                // Ignore drawing pixels off screen
+                let x_normalized  = x as i32 + offset_x;
+                let y_normalized  = y as i32 + offset_y;
+                if x_normalized < 0 || y_normalized < 0 {
+                    continue;
+                }
+
+                let frame_idx = row_major(x_normalized as u32 , y_normalized as u32, frame_width);
                 let map_idx = row_major(x, y, map.width());
                 if frame_idx + 3 < frame.len() {
                     let out = &Color::src_over_blend(
@@ -109,10 +116,15 @@ impl PixelsRenderer {
 
         pixmap
     }
-    fn draw_line(w: u32, h: u32, color: &Color) -> Pixmap {
+    /// # Note
+    ///
+    /// Round all floats to nearest
+    fn draw_line(w: f64, h: f64, color: &Color) -> Pixmap {
         // We can not render anything lower than zero
         // since nothing will show...duhhh so we limit it to 1 minimal
-        let mut pixmap = Pixmap::new(w.max(1), h.max(1)).unwrap();
+        let map_width = (w.round() as u32).max(1);
+        let map_height = (h.round() as u32).max(1);
+        let mut pixmap = Pixmap::new(map_width, map_height).unwrap();
         let mut paint = Paint::default();
         paint.set_color((*color).into());
         pixmap.fill_rect(
@@ -124,14 +136,17 @@ impl PixelsRenderer {
 
         pixmap
     }
+    /// # Note
+    ///
+    /// Round all floats to nearest
     fn draw_gridlines(
         &mut self,
-        pos: (u32, u32),
-        width: u32,
-        height: u32,
+        pos: (f64, f64),
+        width: f64,
+        height: f64,
         spacing: Point,
         color: Color,
-        thickness: u32,
+        thickness: f64,
     ) {
         let (x, y) = pos;
 
@@ -139,23 +154,23 @@ impl PixelsRenderer {
         let w_lines_spacing = width / spacing.x;
         // Draw column gridlines
         for col in 1..spacing.x as usize {
-            let spacing = w_lines_spacing * col as u32;
+            let spacing = w_lines_spacing * col as f64;
             let line = PixelsRenderer::draw_line(
                 thickness,
                 height,
                 &PixelsRenderer::get_contrast_color(color),
             );
-            self.blit_on(x + spacing, y, &line);
+            self.blit_on((x + spacing).round() as i32, y.round() as i32, &line);
         }
         // Draw row gridlines
         for row in 1..spacing.y as usize {
-            let spacing = h_lines_spacing * row as u32;
+            let spacing = h_lines_spacing * row as f64;
             let line = PixelsRenderer::draw_line(
                 width,
                 thickness,
                 &PixelsRenderer::get_contrast_color(color),
             );
-            self.blit_on(x, y + spacing, &line);
+            self.blit_on(x.round() as i32, (y + spacing).round() as i32, &line);
         }
     }
     fn draw_text(text: &str, font_size: f32, color: Color) -> Pixmap {
@@ -244,6 +259,9 @@ impl PixelsRenderer {
             self.draw_widget(widget, NO_CUSTOM);
         }
     }
+    /// # Note
+    ///
+    /// Round all floats to nearest
     fn draw_widget<F: Fn(&mut Self)>(&mut self, widget: &dyn Widget, custom_render: Option<F>) {
         let widget_base = widget.base();
 
@@ -260,7 +278,12 @@ impl PixelsRenderer {
                 widget_base.style.radius as f32,
                 &color,
             );
-            self.blit_on(widget_base.layout.x, widget_base.layout.y, &rounded_rect);
+
+            self.blit_on(
+                widget_base.layout.x.round() as i32,
+                widget_base.layout.y.round() as i32,
+                &rounded_rect,
+            );
         }
 
         let frame_width = self.pixels.texture().width();
@@ -269,10 +292,19 @@ impl PixelsRenderer {
         // Draw normal widget base
         if widget_base.style.radius == 0 {
             let color: [u8; 4] = color.into();
-            for y in widget_base.layout.y..widget_base.layout.y + widget_base.layout.h {
-                for x in widget_base.layout.x..widget_base.layout.x + widget_base.layout.w {
+            for y in widget_base.layout.y as i32
+                ..(widget_base.layout.y + widget_base.layout.h).round() as i32
+            {
+                for x in widget_base.layout.x as i32
+                    ..(widget_base.layout.x + widget_base.layout.w).round() as i32
+                {
+                    // Ignore drawing pixels off screen
+                    if x < 0 || y < 0 {
+                        continue;
+                    }
+
                     // Row major layout follows this formula
-                    let idx = row_major(x, y, frame_width);
+                    let idx = row_major(x as u32, y as u32, frame_width);
                     if idx + 3 < frame.len() {
                         frame[idx..idx + 4].copy_from_slice(&color);
                     }
@@ -292,8 +324,8 @@ impl PixelsRenderer {
                 BLACK,
             );
             self.blit_on(
-                widget_base.layout.x + widget_base.text.pos.x,
-                widget_base.layout.y + widget_base.text.pos.y,
+                (widget_base.layout.x + widget_base.text.pos.x).round() as i32,
+                (widget_base.layout.y + widget_base.text.pos.y).round() as i32,
                 &text,
             );
         }

@@ -15,10 +15,10 @@ pub(crate) const DEFAULT_FONT: &'static [u8; 146004] =
 ///   displayed. If `None`, the element may not display any text, or a
 ///   default value may be used. If `Some`, the string is the label or text
 ///   shown on the element.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Text {
     pub label: String,
-    pub font_size: u32,
+    pub font_size: f32,
     pub pos: Point,
     pub(crate) valign: bool,
     pub(crate) halign: bool,
@@ -28,8 +28,8 @@ impl Text {
     /// based on the font style and kerning included
     pub(crate) fn get_true_dimensions(&self) -> Point {
         let font = FontRef::try_from_slice(DEFAULT_FONT).unwrap();
-        let mut caret = point(0.0, self.font_size as f32);
-        let scale = PxScale::from(self.font_size as f32);
+        let mut caret = point(0.0, self.font_size);
+        let scale = PxScale::from(self.font_size);
         for c in self.label.chars() {
             let glyph = font.glyph_id(c).with_scale_and_position(scale, caret);
             caret.x += font.as_scaled(scale).h_advance(glyph.id);
@@ -42,7 +42,7 @@ impl Default for Text {
     fn default() -> Self {
         Self {
             label: Default::default(),
-            font_size: 12,
+            font_size: 12.0,
             pos: Default::default(),
             valign: false,
             halign: false
