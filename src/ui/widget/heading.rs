@@ -26,15 +26,15 @@ impl Heading {
         Heading::default()
     }
     pub fn set_large_heading(self) -> Self {
-        self.base.borrow_mut().text.font_size = 32;
+        self.base.borrow_mut().text.font_size = 32.0;
         self
     }
     pub fn set_medium_heading(self) -> Self {
-        self.base.borrow_mut().text.font_size = 24;
+        self.base.borrow_mut().text.font_size = 24.0;
         self
     }
     pub fn set_small_heading(self) -> Self {
-        self.base.borrow_mut().text.font_size = 18;
+        self.base.borrow_mut().text.font_size = 18.0;
         self
     }
 }

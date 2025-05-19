@@ -4,6 +4,7 @@ pub const BLUE: Color = Color::RGBA(0, 0, 255, 255);
 pub const WHITE: Color = Color::RGBA(255, 255, 255, 255);
 pub const BLACK: Color = Color::RGBA(0, 0, 0, 255);
 pub const YELLOW: Color = Color::RGBA(255, 255, 0, 255);
+pub const LIGHT_GRAY: Color = Color::RGBA(211, 211, 211, 255);
 pub const TRANSPARENT: Color = Color::RGBA(0, 0, 0, 0);
 
 /// Represents the current color settings used for rendering.

@@ -1,4 +1,8 @@
+use std::{iter::repeat_with, rc::Rc};
+
 use crate::ui::widget::cell::Cell;
+
+use super::color::ColorState;
 
 /// A struct representing the position and size of a UI element.
 ///
@@ -16,12 +20,12 @@ use crate::ui::widget::cell::Cell;
 /// - `h`: The height of the widget, defining how tall it is within its
 /// container.
 ///
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Layout {
-    pub x: u32,
-    pub y: u32,
-    pub w: u32,
-    pub h: u32,
+    pub x: f64,
+    pub y: f64,
+    pub w: f64,
+    pub h: f64,
 }
 impl Layout {
     /// Determines if mouse is  in the bounds of this
@@ -34,27 +38,32 @@ impl Layout {
     }
     /// Determines the center of the layout vertically
     /// with the `rhs` included in the layout
-    pub(crate) fn vertical_center(&self, rhs: u32) -> u32 {
-        (self.h.saturating_sub(rhs)) / 2
+    pub(crate) fn vertical_center(&self, rhs: f64) -> f64 {
+        (self.h - rhs) / 2.0
     }
     /// Determines the center of the layout horizontally
     /// with the `rhs` included in the layout
-    pub(crate) fn horizontal_center(&self, rhs: u32) -> u32 {
-        (self.w.saturating_sub(rhs)) / 2
+    pub(crate) fn horizontal_center(&self, rhs: f64) -> f64 {
+        (self.w - rhs) / 2.0
     }
 }
 
 /// The `Point` struct defines a simple x and y coordinates
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Point {
-    pub x: u32,
-    pub y: u32,
+    pub x: f64,
+    pub y: f64,
+}
+impl Point {
+    pub(crate) fn new(x: f64, y: f64) -> Self {
+        Self { x, y }
+    }
 }
 impl From<ab_glyph::Point> for Point {
     fn from(value: ab_glyph::Point) -> Self {
         Point {
-            x: value.x as u32,
-            y: value.y as u32,
+            x: value.x as f64,
+            y: value.y as f64,
         }
     }
 }
@@ -75,48 +84,59 @@ impl From<ab_glyph::Point> for Point {
 #[derive(Default, Clone)]
 pub struct Grid {
     pub(crate) size: Point,
-    pub(crate) cells: Vec<Vec<Cell>>,
-    pub(crate) thickness: u32,
+    pub(crate) cells: Vec<Vec<Rc<Cell>>>,
+    pub(crate) thickness: f64,
+    pub(crate) color: ColorState,
 }
 impl Grid {
     /// Create a new `Grid` filling the `cells`
     /// with an empty widget with size `[size.y][size.x]`
-    pub(crate) fn new(size: Point, thickness: u32) -> Self {
+    pub(crate) fn new(size: Point, thickness: f64, color: ColorState) -> Self {
+        let mut cells: Vec<Vec<Rc<Cell>>> = Vec::new();
+        for _ in 0..size.y as usize {
+            cells.push(
+                repeat_with(|| Rc::new(Cell::default()))
+                    .take(size.x as usize)
+                    .collect(),
+            );
+        }
         Self {
             size,
-            cells: vec![vec![Cell::default(); size.x as usize]; size.y as usize],
+            cells,
             thickness,
+            color,
         }
     }
     /// Resize grid to meet the dimensions of
     /// `height x width` also account for pos `x` and `y` offset
-    pub(crate) fn resize(&mut self, x: u32, y: u32, height: u32, width: u32) {
+    pub(crate) fn resize(&mut self, x: f64, y: f64, height: f64, width: f64) {
         let h_cell_size = height / self.size.y;
         let w_cell_size = width / self.size.x;
 
         self.on_cell(|pos, c| {
             let mut cbase = c.base.borrow_mut();
+            cbase.style.color = self.color;
             // Due to line thickness being at minimal 1 px we need to
             // account for that spacing that way we do not overlap
             // cells
             let buffer_x = pos.x * w_cell_size;
             let buffer_y = pos.y * h_cell_size;
-            cbase.layout.x = if buffer_x > 0 {
+            cbase.layout.x = if buffer_x > 0.0 {
                 buffer_x + self.thickness
             } else {
-                0
+                0.0
             } + x;
-            cbase.layout.y = if buffer_y > 0 {
+            cbase.layout.y = if buffer_y > 0.0 {
                 buffer_y + self.thickness
             } else {
-                0
+                0.0
             } + y;
-            cbase.layout.w = if buffer_x > 0 {
+            cbase.layout.w = if buffer_x > 0.0 {
                 w_cell_size - self.thickness
             } else {
                 w_cell_size
             };
-            cbase.layout.h = if buffer_y > 0 {
+            cbase.layout.h = if buffer_y > 0.0 {
                 h_cell_size - self.thickness
             } else {
                 h_cell_size
@@ -127,14 +147,14 @@ impl Grid {
     ///
     /// Callback receives the 2D indices pos `Point` as well as
     /// the concrete Cell instance
-    pub(crate) fn on_cell<F: FnMut(Point, &Cell)>(&self, mut callback: F) {
+    pub(crate) fn on_cell<F: FnMut(Point, Rc<Cell>)>(&self, mut callback: F) {
         for y in 0..self.size.y as usize {
             for x in 0..self.size.x as usize {
-                let cell = &self.cells[y][x];
+                let cell = self.cells[y][x].clone();
                 callback(
                     Point {
-                        x: x as u32,
-                        y: y as u32,
+                        x: x as f64,
+                        y: y as f64,
                     },
                     cell,
                 )

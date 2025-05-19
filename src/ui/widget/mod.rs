@@ -23,7 +23,7 @@ use crate::action::Action;
 
 use super::{
     color::{Color, ColorState},
-    layout::Layout,
+    layout::{Layout, Point},
     state::State,
     style::Style,
     sync::Thread,
@@ -36,6 +36,7 @@ pub(crate) mod cell;
 pub mod container;
 pub mod heading;
 pub mod label;
+pub mod scrollbar;
 
 /// A base struct representing a generic UI widget.
 ///
@@ -63,6 +64,7 @@ pub struct BaseWidget {
     pub text: Text,
     pub style: Style,
     pub layout: Layout,
+    pub offset: Point,
     pub state: State,
 }
 
@@ -96,7 +98,7 @@ pub trait Widget: Any {
         self
     }
     /// Set the font size of the inside text
-    fn set_label_size(self, size: u32) -> Self
+    fn set_label_size(self, size: f32) -> Self
     where
         Self: Sized,
     {
@@ -112,7 +114,7 @@ pub trait Widget: Any {
         self
     }
     /// Set the x-axis position of the widget
-    fn set_x(self, x: u32) -> Self
+    fn set_x(self, x: f64) -> Self
     where
         Self: Sized,
     {
@@ -120,7 +122,7 @@ pub trait Widget: Any {
         self
     }
     /// Set the y-axis position of the widget
-    fn set_y(self, y: u32) -> Self
+    fn set_y(self, y: f64) -> Self
     where
         Self: Sized,
     {
@@ -128,7 +130,7 @@ pub trait Widget: Any {
         self
     }
     /// Set the height dimension of the widget
-    fn set_height(self, height: u32) -> Self
+    fn set_height(self, height: f64) -> Self
     where
         Self: Sized,
     {
@@ -136,7 +138,7 @@ pub trait Widget: Any {
         self
     }
     /// Set the width dimension of the widget
-    fn set_width(self, width: u32) -> Self
+    fn set_width(self, width: f64) -> Self
     where
         Self: Sized,
     {

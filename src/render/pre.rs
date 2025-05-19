@@ -28,23 +28,66 @@ impl PreRenderer {
                 widget_base.text.pos.y = new_y;
             }
             // Auto-inherit layout if no specfied
-            if widget_base.layout.w == 0 {
+            if widget_base.layout.w == 0.0 {
                 widget_base.layout.w = widget_base.text.get_true_dimensions().x
             }
-            if widget_base.layout.h == 0 {
+            if widget_base.layout.h == 0.0 {
                 widget_base.layout.h = widget_base.text.get_true_dimensions().y
             }
         }
     }
     /// Adjust layout of widgets based on
     /// user settings
-    fn adjust_layout(&self, widget: &Rc<dyn Widget>) {
-        if let Some(widget) = widget.as_any().downcast_ref::<Container>() {
-            // Adjust spacing layout
-            match widget.flex {
-                crate::ui::layout::FlexLayout::None => widget.create_normal_layout(),
-                crate::ui::layout::FlexLayout::Col => widget.create_flex_col_layout(),
-                crate::ui::layout::FlexLayout::Grid(cols) => widget.create_flex_grid_layout(cols),
+    fn adjust_layout(&self, widget: &Container) {
+        // Adjust spacing layout
+        match widget.flex {
+            crate::ui::layout::FlexLayout::None => widget.create_normal_layout(),
+            crate::ui::layout::FlexLayout::Col => widget.create_flex_col_layout(),
+            crate::ui::layout::FlexLayout::Grid(cols) => widget.create_flex_grid_layout(cols),
+        }
+    }
+    /// Adjust scrollbars
+    fn adjust_scrolling(&self, widget: &Container) {
+        if let Some(scrollbar) = &widget.scrollbar {
+            let (x, y) = scrollbar;
+            let widget_base = widget.base();
+
+            let mut x_base = x.base_mut();
+            x_base.layout.y = (widget_base.layout.h + widget_base.layout.y) - x_base.layout.h;
+            if x_base.layout.x == 0.0 {
+                x_base.layout.x = widget_base.layout.x;
+            }
+            // Create scrollbar to be balanced based on max amount of overflow
+            // occuring..otherwise its not seen if no overflow occurs
+            let container_width = widget_base.layout.w + widget_base.layout.x;
+            let overflow_x = widget
+                .children
+                .iter()
+                .fold(container_width, |acc, child| child.base().layout.w.max(acc));
+            let amount_to_take = container_width / overflow_x;
+            // Basically makes x scrollbar visible
+            if amount_to_take < 1.0 {
+                x_base.layout.w = amount_to_take * widget_base.layout.w;
+            }
+
+            let mut y_base = y.base_mut();
+            y_base.layout.x = (widget_base.layout.w + widget_base.layout.x) - y_base.layout.w;
+
+            // This check prevents the scrollbar from being stucked
+            // when redraws occur
+            if y_base.layout.y == 0.0 {
+                y_base.layout.y = widget_base.layout.y;
+            }
+            // Create scrollbar to be balanced based on max amount of overflow
+            // occuring..otherwise its not seen if no overflow occurs
+            let container_height = widget_base.layout.h + widget_base.layout.y;
+            let last_child = &widget.children[widget.children.len() - 1];
+            let last_child_base = last_child.base();
+            let overflow_y = last_child_base.layout.y + last_child_base.layout.h;
+            let amount_to_take = container_height / overflow_y;
+            // Basically makes y scrollbar visible
+            if amount_to_take < 1.0 {
+                y_base.layout.h = amount_to_take * widget_base.layout.h;
             }
         }
     }
@@ -67,9 +110,11 @@ impl PreRenderer {
     /// of surrounding widgets or attributes
     pub(crate) fn adjust(&self, widget: &Rc<dyn Widget>) {
         self.adjust_children(widget);
-        
-        self.adjust_layout(widget);
+
         if let Some(widget) = widget.as_any().downcast_ref::<Container>() {
+            self.adjust_layout(widget);
+            self.adjust_scrolling(widget);
+
             // Propagate changes down to children
             for child in &widget.children {
                 self.adjust(child);
@@ -85,6 +130,5 @@ impl PreRenderer {
                 );
             }
         }
-       
     }
 }

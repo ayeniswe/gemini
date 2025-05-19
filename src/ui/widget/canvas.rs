@@ -7,6 +7,7 @@ use std::{
 use crate::{
     action::Action,
     ui::{
+        color::Color,
         layout::{Col, Grid, Point, Row},
         sync::Thread,
     },
@@ -49,10 +50,17 @@ impl Canvas {
     /// # Panics
     ///
     /// This function will panic if `size` is 0
-    pub fn set_grid(mut self, size: u32, thickness: u32) -> Self {
+    pub fn set_grid(mut self, size: u32, thickness: f64, color: Color) -> Self {
         let base = self.base.borrow_mut();
 
-        self.grid = RefCell::new(Some(Grid::new(Point { x: size, y: size }, thickness)));
+        self.grid = RefCell::new(Some(Grid::new(
+            Point {
+                x: size as f64,
+                y: size as f64,
+            },
+            thickness,
+            color.into(),
+        )));
 
         drop(base);
 
@@ -125,15 +133,16 @@ impl Canvas {
     /// # Panics
     ///
     /// This function will panic if `size.0` or `size.1` is 0
-    pub fn set_grid_range(mut self, size: (u32, u32), thickness: u32) -> Self {
+    pub fn set_grid_range(mut self, size: (u32, u32), thickness: f64, color: Color) -> Self {
         let base = self.base.borrow_mut();
 
         self.grid = RefCell::new(Some(Grid::new(
             Point {
-                x: size.0,
-                y: size.1,
+                x: size.0 as f64,
+                y: size.1 as f64,
             },
             thickness,
+            color.into(),
         )));
 
         drop(base);
@@ -145,160 +154,164 @@ impl_widget! {Canvas}
 
 #[cfg(test)]
 mod tests {
-    use crate::ui::{layout::Layout, widget::Widget};
+    use crate::ui::{color::Color, layout::Layout, widget::Widget};
 
     use super::Canvas;
 
     #[test]
     fn test_gridlines_are_spaced_correctly() {
-        let c = Canvas::new().set_width(32).set_height(16).set_grid(4, 1);
+        let c = Canvas::new().set_width(32.0).set_height(16.0).set_grid(
+            4,
+            1.0,
+            Color::RGBA(0, 0, 0, 0),
+        );
 
         let mut grid = c.grid.borrow_mut().clone().unwrap();
-        grid.resize(0, 0, 16, 32);
+        grid.resize(0.0, 0.0, 16.0, 32.0);
 
         let cells = grid.cells;
         assert!(
             cells[0][0].base.borrow().layout
                 == Layout {
-                    x: 0,
-                    y: 0,
-                    w: 8,
-                    h: 4
+                    x: 0.0,
+                    y: 0.0,
+                    w: 8.0,
+                    h: 4.0
                 }
         );
         assert!(
             cells[1][0].base.borrow().layout
                 == Layout {
-                    x: 0,
-                    y: 5,
-                    w: 8,
-                    h: 3
+                    x: 0.0,
+                    y: 5.0,
+                    w: 8.0,
+                    h: 3.0
                 }
         );
         assert!(
             cells[2][0].base.borrow().layout
                 == Layout {
-                    x: 0,
-                    y: 9,
-                    w: 8,
-                    h: 3
+                    x: 0.0,
+                    y: 9.0,
+                    w: 8.0,
+                    h: 3.0
                 }
         );
         assert!(
             cells[3][0].base.borrow().layout
                 == Layout {
-                    x: 0,
-                    y: 13,
-                    w: 8,
-                    h: 3
+                    x: 0.0,
+                    y: 13.0,
+                    w: 8.0,
+                    h: 3.0
                 }
         );
         assert!(
             cells[0][1].base.borrow().layout
                 == Layout {
-                    x: 9,
-                    y: 0,
-                    w: 7,
-                    h: 4
+                    x: 9.0,
+                    y: 0.0,
+                    w: 7.0,
+                    h: 4.0
                 }
         );
         assert!(
             cells[1][1].base.borrow().layout
                 == Layout {
-                    x: 9,
-                    y: 5,
-                    w: 7,
-                    h: 3
+                    x: 9.0,
+                    y: 5.0,
+                    w: 7.0,
+                    h: 3.0
                 }
         );
         assert!(
             cells[2][1].base.borrow().layout
                 == Layout {
-                    x: 9,
-                    y: 9,
-                    w: 7,
-                    h: 3
+                    x: 9.0,
+                    y: 9.0,
+                    w: 7.0,
+                    h: 3.0
                 }
         );
         assert!(
             cells[3][1].base.borrow().layout
                 == Layout {
-                    x: 9,
-                    y: 13,
-                    w: 7,
-                    h: 3
+                    x: 9.0,
+                    y: 13.0,
+                    w: 7.0,
+                    h: 3.0
                 }
         );
         assert!(
             cells[0][2].base.borrow().layout
                 == Layout {
-                    x: 17,
-                    y: 0,
-                    w: 7,
-                    h: 4
+                    x: 17.0,
+                    y: 0.0,
+                    w: 7.0,
+                    h: 4.0
                 }
         );
         assert!(
             cells[1][2].base.borrow().layout
                 == Layout {
-                    x: 17,
-                    y: 5,
-                    w: 7,
-                    h: 3
+                    x: 17.0,
+                    y: 5.0,
+                    w: 7.0,
+                    h: 3.0
                 }
         );
         assert!(
             cells[2][2].base.borrow().layout
                 == Layout {
-                    x: 17,
-                    y: 9,
-                    w: 7,
-                    h: 3
+                    x: 17.0,
+                    y: 9.0,
+                    w: 7.0,
+                    h: 3.0
                 }
         );
         assert!(
             cells[3][2].base.borrow().layout
                 == Layout {
-                    x: 17,
-                    y: 13,
-                    w: 7,
-                    h: 3
+                    x: 17.0,
+                    y: 13.0,
+                    w: 7.0,
+                    h: 3.0
                 }
         );
         assert!(
             cells[0][3].base.borrow().layout
                 == Layout {
-                    x: 25,
-                    y: 0,
-                    w: 7,
-                    h: 4
+                    x: 25.0,
+                    y: 0.0,
+                    w: 7.0,
+                    h: 4.0
                 }
         );
         assert!(
             cells[1][3].base.borrow().layout
                 == Layout {
-                    x: 25,
-                    y: 5,
-                    w: 7,
-                    h: 3
+                    x: 25.0,
+                    y: 5.0,
+                    w: 7.0,
+                    h: 3.0
                 }
         );
         assert!(
             cells[2][3].base.borrow().layout
                 == Layout {
-                    x: 25,
-                    y: 9,
-                    w: 7,
-                    h: 3
+                    x: 25.0,
+                    y: 9.0,
+                    w: 7.0,
+                    h: 3.0
                 }
         );
         assert!(
             cells[3][3].base.borrow().layout
                 == Layout {
-                    x: 25,
-                    y: 13,
-                    w: 7,
-                    h: 3
+                    x: 25.0,
+                    y: 13.0,
+                    w: 7.0,
+                    h: 3.0
                 }
         );
     }

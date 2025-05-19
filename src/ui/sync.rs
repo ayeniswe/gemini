@@ -1,5 +1,4 @@
 use std::{
-    ops::Deref,
     sync::{Arc, Mutex},
     thread,
 };

@@ -75,11 +75,15 @@ impl DOM {
     /// Act on the widget apperance and behaviours based on the
     /// actions they subscribed to and only triggering action based
     /// on the actions logic
-    fn apply_actions(window: &Window, node: &Rc<dyn Widget>, event: Event<Signal>) {
+    fn apply_actions(
+        window: &Window,
+        node: &Rc<dyn Widget>,
+        event: Event<Signal>,
+        cursor_pos: PhysicalPosition<f64>,
+    ) {
         let mut actions = node.action_mut();
-        let mut widget = node.base_mut();
         for action in actions.iter_mut() {
-            action.apply_action(window, &mut widget, event.clone());
+            action.apply_action(window, node, event.clone(), cursor_pos);
         }
 
         // Child nodes are possible and must invoke any events as well
@@ -87,17 +91,17 @@ impl DOM {
             // Handle all grid cells of canvas
             let grid = &*canvas.grid.borrow();
             if let Some(grid) = grid {
-                grid.on_cell(|_, c| {
-                    let mut actions = c.action_mut();
-                    let mut widget = c.base_mut();
+                grid.on_cell(|_, cell| {
+                    let mut actions = cell.action_mut();
+                    let cell: Rc<dyn Widget> = cell.clone();
                     for action in actions.iter_mut() {
-                        action.apply_action(window, &mut widget, event.clone());
+                        action.apply_action(window, &cell, event.clone(), cursor_pos);
                     }
                 });
             }
         } else if let Some(container) = node.as_any().downcast_ref::<Container>() {
             for child in &container.children {
-                DOM::apply_actions(window, child, event.clone());
+                DOM::apply_actions(window, child, event.clone(), cursor_pos);
             }
         }
     }
@@ -138,7 +142,7 @@ impl DOM {
 
                             for node in &self.nodes {
                                 self.pre_renderer.adjust(node);
-                                
+
                                 self.renderer.draw(node);
                             }
 
@@ -166,7 +170,7 @@ impl DOM {
                 }
 
                 for node in &self.nodes {
-                    DOM::apply_actions(&self.window, node, event.clone());
+                    DOM::apply_actions(&self.window, node, event.clone(), self.cursor_position);
                 }
             })
             .unwrap();
