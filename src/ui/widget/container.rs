@@ -114,6 +114,8 @@ impl Container {
         for child in self.children.iter().enumerate() {
             let (idx, child) = child;
 
+            self.snap_to_parent(child);
+
             // Space out grid layout
             // to meet max columns and row
             if idx != 0 {
@@ -174,8 +176,6 @@ impl Container {
                 child_base.layout.y = row * (prev.base().layout.h + self.gap) + child_base.layout.y;
             }
 
-            self.snap_to_parent(child);
-
             prev = Some(child);
         }
     }
@@ -183,7 +183,7 @@ impl Container {
     ///
     /// This will override x and y postions set internally
     /// for children widgets
-    /// 
+    ///
     /// # Panics
     /// This method will panic if no `add_widgets` call
     /// was made or children are zero
@@ -196,16 +196,16 @@ impl Container {
 
         let rows = self.children.len() as u32;
         let gaps_factor_col = self.gap * (rows.saturating_sub(1));
-        let height_share = (self.base.borrow().layout.h / rows) - gaps_factor_col;
+        let height_share = (self.base.borrow().layout.h / rows).abs_diff(gaps_factor_col);
 
-        for child in self.children.iter().enumerate() {
-            let (row, child) = child;
+        for child in self.children.iter() {
+            self.snap_to_parent(child);
 
             ////////////
             /////// OVERFLOWING PROTECTION
-            ////
-            let new_h = { child.base().layout.h.min(height_share) };
-            child.base_mut().layout.h = new_h;
+            //
+            // let new_h = { child.base().layout.h.min(height_share) };
+            // child.base_mut().layout.h = new_h;
 
             ////////////
             /////// ALIGMENT
@@ -236,10 +236,9 @@ impl Container {
             ////
             if let Some(prev) = prev {
                 let mut child_base = child.base_mut();
-                child_base.layout.y += row as u32 * (prev.base().layout.h + self.gap);
+                let prev_base = prev.base();
+                child_base.layout.y = prev_base.layout.y + prev_base.layout.h + self.gap;
             }
-
-            self.snap_to_parent(child);
 
             prev = Some(child);
         }
