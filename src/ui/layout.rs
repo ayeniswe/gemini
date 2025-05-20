@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::ui::widget::cell::Cell;
 
 /// A struct representing the position and size of a UI element.
@@ -80,7 +82,7 @@ impl From<ab_glyph::Point> for Point {
 #[derive(Default, Clone)]
 pub struct Grid {
     pub(crate) size: Point,
-    pub(crate) cells: Vec<Vec<Cell>>,
+    pub(crate) cells: Vec<Vec<Rc<Cell>>>,
     pub(crate) thickness: f64,
 }
 impl Grid {
@@ -89,7 +91,7 @@ impl Grid {
     pub(crate) fn new(size: Point, thickness: f64) -> Self {
         Self {
             size,
-            cells: vec![vec![Cell::default(); size.x as usize]; size.y as usize],
+            cells: vec![vec![Rc::new(Cell::default()); size.x as usize]; size.y as usize],
             thickness,
         }
     }
@@ -97,7 +99,7 @@ impl Grid {
     /// `height x width` also account for pos `x` and `y` offset
     pub(crate) fn resize(&mut self, x: f64, y: f64, height: f64, width: f64) {
         let h_cell_size = height / self.size.y;
-        let w_cell_size = width  / self.size.x;
+        let w_cell_size = width / self.size.x;
 
         self.on_cell(|pos, c| {
             let mut cbase = c.base.borrow_mut();
@@ -132,10 +134,10 @@ impl Grid {
     ///
     /// Callback receives the 2D indices pos `Point` as well as
     /// the concrete Cell instance
-    pub(crate) fn on_cell<F: FnMut(Point, &Cell)>(&self, mut callback: F) {
+    pub(crate) fn on_cell<F: FnMut(Point, Rc<Cell>)>(&self, mut callback: F) {
         for y in 0..self.size.y as usize {
             for x in 0..self.size.x as usize {
-                let cell = &self.cells[y][x];
+                let cell = self.cells[y][x].clone();
                 callback(
                     Point {
                         x: x as f64,

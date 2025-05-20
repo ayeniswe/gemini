@@ -6,14 +6,14 @@ use std::{
 };
 
 use crate::{
-    action::Action,
+    action::{scroll::Scroll, Action},
     ui::{
         layout::{Col, FlexLayout},
         sync::Thread,
     },
 };
 
-use super::{impl_widget, BaseWidget, Widget};
+use super::{impl_widget, scrollbar::ScrollBar, BaseWidget, Widget};
 
 /// A struct representing a container widget.
 ///
@@ -33,6 +33,7 @@ pub struct Container {
     valign: bool,
     halign: bool,
     gap: f64,
+    pub(crate) scrollbar: Option<(ScrollBar, ScrollBar)>,
 }
 impl Container {
     pub fn new() -> Self {
@@ -48,6 +49,12 @@ impl Container {
     /// the x-axis
     pub fn set_horizontal(mut self) -> Self {
         self.halign = true;
+        self
+    }
+    /// Allows the container to be scrollable
+    pub fn on_scroll(mut self) -> Self {
+        self.scrollbar = Some((ScrollBar::new_x(), ScrollBar::new_y()));
+        self.action_mut().push(Action::Scroll(Scroll::new()));
         self
     }
     /// Set a gap size between every child in container

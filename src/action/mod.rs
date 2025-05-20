@@ -7,15 +7,22 @@
 //! and extensible way.
 //!
 
+use std::rc::Rc;
+
 use click::ClickHandler;
 use hover::Hover;
-use winit::{event::Event, window::Window};
+use scroll::Scroll;
+use winit::{dpi::PhysicalPosition, event::Event, window::Window};
 use zoom::Zoom;
 
-use crate::ui::{sync::Signal, widget::BaseWidget};
+use crate::ui::{
+    sync::Signal,
+    widget::{container::Container, Widget},
+};
 
 pub mod click;
 pub mod hover;
+pub(crate) mod scroll;
 pub mod zoom;
 
 /// The `Action` enum acts as a middleware layer to dispatch event
@@ -35,13 +42,27 @@ pub enum Action {
     ZoomInOut(Zoom),
     /// Allows the user to respond to clicks on the widget
     Click(Box<dyn ClickHandler>),
+    /// Allows `Container` to be scrollable
+    Scroll(Scroll),
 }
 impl Actionable for Action {
-    fn apply_action(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<Signal>) {
+    fn apply_action(
+        &mut self,
+        window: &Window,
+        widget: &Rc<dyn Widget>,
+        event: Event<Signal>,
+        cursor_pos: PhysicalPosition<f64>,
+    ) {
         match self {
-            Action::Hover(hover) => hover.apply(window, widget, event),
-            Action::ZoomInOut(zoom) => zoom.apply(window, widget, event),
-            Action::Click(click) => click.apply(window, widget, event),
+            Action::Hover(hover) => hover.apply(window, &mut widget.base_mut(), event),
+            Action::ZoomInOut(zoom) => zoom.apply(window, &mut widget.base_mut(), event),
+            Action::Click(click) => click.apply(window, &mut widget.base_mut(), event),
+            Action::Scroll(scroll) => scroll.apply(
+                window,
+                widget.as_any().downcast_ref::<Container>().unwrap(),
+                event,
+                cursor_pos
+            ),
         }
     }
 }
@@ -49,5 +70,5 @@ pub(crate) trait Actionable {
     /// Decides the actions to apply to the widget base design
     ///
     /// This dispatches the event down to the appropriate action handler
-    fn apply_action(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<Signal>);
+    fn apply_action(&mut self, window: &Window, widget: &Rc<dyn Widget>, event: Event<Signal>, cursor_pos: PhysicalPosition<f64>);
 }

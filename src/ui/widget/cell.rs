@@ -1,7 +1,5 @@
 use std::{
-    any::Any,
-    cell::{Ref, RefCell, RefMut},
-    sync::Arc,
+    any::Any, cell::{Ref, RefCell, RefMut}, sync::Arc
 };
 
 use crate::{action::Action, ui::sync::Thread};

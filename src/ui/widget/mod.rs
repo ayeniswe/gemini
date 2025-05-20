@@ -23,7 +23,7 @@ use crate::action::Action;
 
 use super::{
     color::{Color, ColorState},
-    layout::Layout,
+    layout::{Layout, Point},
     state::State,
     style::Style,
     sync::Thread,
@@ -36,6 +36,7 @@ pub(crate) mod cell;
 pub mod container;
 pub mod heading;
 pub mod label;
+pub mod scrollbar;
 
 /// A base struct representing a generic UI widget.
 ///
@@ -63,6 +64,7 @@ pub struct BaseWidget {
     pub text: Text,
     pub style: Style,
     pub layout: Layout,
+    pub offset: Point,
     pub state: State,
 }
 
