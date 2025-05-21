@@ -1,6 +1,8 @@
-use std::rc::Rc;
+use std::{iter::repeat_with, rc::Rc};
 
 use crate::ui::widget::cell::Cell;
+
+use super::color::ColorState;
 
 /// A struct representing the position and size of a UI element.
 ///
@@ -84,15 +86,25 @@ pub struct Grid {
     pub(crate) size: Point,
     pub(crate) cells: Vec<Vec<Rc<Cell>>>,
     pub(crate) thickness: f64,
+    pub(crate) color: ColorState,
 }
 impl Grid {
     /// Create a new `Grid` filling the `cells`
     /// with an empty widget with size `[size.y][size.x]`
-    pub(crate) fn new(size: Point, thickness: f64) -> Self {
+    pub(crate) fn new(size: Point, thickness: f64, color: ColorState) -> Self {
+        let mut cells: Vec<Vec<Rc<Cell>>> = Vec::new();
+        for _ in 0..size.y as usize {
+            cells.push(
+                repeat_with(|| Rc::new(Cell::default()))
+                    .take(size.x as usize)
+                    .collect(),
+            );
+        }
         Self {
             size,
-            cells: vec![vec![Rc::new(Cell::default()); size.x as usize]; size.y as usize],
+            cells,
             thickness,
+            color,
         }
     }
     /// Resize grid to meet the dimensions of
@@ -103,6 +115,7 @@ impl Grid {
 
         self.on_cell(|pos, c| {
             let mut cbase = c.base.borrow_mut();
+            cbase.style.color = self.color;
             // Due to line thickness being at minimal 1 px we need to
             // account for that spacing that way we do not overlap
             // cells

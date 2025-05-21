@@ -7,6 +7,7 @@ use std::{
 use crate::{
     action::Action,
     ui::{
+        color::Color,
         layout::{Col, Grid, Point, Row},
         sync::Thread,
     },
@@ -49,7 +50,7 @@ impl Canvas {
     /// # Panics
     ///
     /// This function will panic if `size` is 0
-    pub fn set_grid(mut self, size: u32, thickness: f64) -> Self {
+    pub fn set_grid(mut self, size: u32, thickness: f64, color: Color) -> Self {
         let base = self.base.borrow_mut();
 
         self.grid = RefCell::new(Some(Grid::new(
@@ -58,6 +59,7 @@ impl Canvas {
                 y: size as f64,
             },
             thickness,
+            color.into(),
         )));
 
         drop(base);
@@ -131,7 +133,7 @@ impl Canvas {
     /// # Panics
     ///
     /// This function will panic if `size.0` or `size.1` is 0
-    pub fn set_grid_range(mut self, size: (u32, u32), thickness: f64) -> Self {
+    pub fn set_grid_range(mut self, size: (u32, u32), thickness: f64, color: Color) -> Self {
         let base = self.base.borrow_mut();
 
         self.grid = RefCell::new(Some(Grid::new(
@@ -140,6 +142,7 @@ impl Canvas {
                 y: size.1 as f64,
             },
             thickness,
+            color.into(),
         )));
 
         drop(base);
@@ -151,16 +154,17 @@ impl_widget! {Canvas}
 
 #[cfg(test)]
 mod tests {
-    use crate::ui::{layout::Layout, widget::Widget};
+    use crate::ui::{color::Color, layout::Layout, widget::Widget};
 
     use super::Canvas;
 
     #[test]
     fn test_gridlines_are_spaced_correctly() {
-        let c = Canvas::new()
-            .set_width(32.0)
-            .set_height(16.0)
-            .set_grid(4, 1.0);
+        let c = Canvas::new().set_width(32.0).set_height(16.0).set_grid(
+            4,
+            1.0,
+            Color::RGBA(0, 0, 0, 0),
+        );
 
         let mut grid = c.grid.borrow_mut().clone().unwrap();
         grid.resize(0.0, 0.0, 16.0, 32.0);
