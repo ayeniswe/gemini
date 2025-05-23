@@ -16,8 +16,8 @@ use winit::{dpi::PhysicalPosition, event::Event, window::Window};
 use zoom::Zoom;
 
 use crate::ui::{
-    sync::Signal,
-    widget::{container::Container, Widget},
+    sync::{Signal, Trigger},
+    widget::{container::Container, Widget, WidgetI},
 };
 
 pub mod click;
@@ -45,30 +45,25 @@ pub enum Action {
     /// Allows `Container` to be scrollable
     Scroll(Scroll),
 }
-impl Actionable for Action {
-    fn apply_action(
+impl Action {
+    pub(crate) fn apply_action(
         &mut self,
-        window: &Window,
-        widget: &Rc<dyn Widget>,
+        trigger: Rc<Trigger>,
+        widget: &Rc<dyn WidgetI>,
         event: Event<Signal>,
         cursor_pos: PhysicalPosition<f64>,
     ) {
         match self {
-            Action::Hover(hover) => hover.apply(window, &mut widget.base_mut(), event),
-            Action::ZoomInOut(zoom) => zoom.apply(window, &mut widget.base_mut(), event),
-            Action::Click(click) => click.apply(window, &mut widget.base_mut(), event),
-            Action::Scroll(scroll) => scroll.apply(
-                window,
-                widget.as_any().downcast_ref::<Container>().unwrap(),
-                event,
-                cursor_pos
-            ),
+            // Action::Hover(hover) => hover.apply(window, &mut widget.base_mut(), event),
+            // Action::ZoomInOut(zoom) => zoom.apply(window, &mut widget.base_mut(), event),
+            // Action::Scroll(scroll) => scroll.apply(
+            //     window,
+            //     widget.as_any().downcast_ref::<Container>().unwrap(),
+            //     event,
+            //     cursor_pos,
+            // ),
+            Action::Click(click) => click.apply(trigger, &mut widget.base_mut(), event),
+            _ => (),
         }
     }
-}
-pub(crate) trait Actionable {
-    /// Decides the actions to apply to the widget base design
-    ///
-    /// This dispatches the event down to the appropriate action handler
-    fn apply_action(&mut self, window: &Window, widget: &Rc<dyn Widget>, event: Event<Signal>, cursor_pos: PhysicalPosition<f64>);
 }

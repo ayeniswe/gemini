@@ -20,7 +20,7 @@ enum Axis {
 /// The `Scroll` struct allows `Container`s to have the ability
 /// to respond to scroll movements on x or y axis
 #[derive(Clone, Default, Copy)]
-pub struct Scroll {
+pub(crate) struct Scroll {
     /// The current selected scrollbar
     axis: Option<Axis>,
     /// The `cursor_offset` is so the scrollbar moves in uniform with

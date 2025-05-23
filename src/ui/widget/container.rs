@@ -9,11 +9,11 @@ use crate::{
     action::{scroll::Scroll, Action},
     ui::{
         layout::{Col, FlexLayout},
-        sync::Thread,
+        sync::{Thread, Trigger},
     },
 };
 
-use super::{impl_widget, scrollbar::ScrollBar, BaseWidget, Widget};
+use super::{impl_widget, scrollbar::ScrollBar, BaseWidget, Widget, WidgetI, WidgetInternal};
 
 /// A struct representing a container widget.
 ///
@@ -28,12 +28,13 @@ pub struct Container {
     pub base: RefCell<BaseWidget>,
     pub actions: RefCell<Vec<Action>>,
     emitter: Option<Arc<dyn Thread>>,
-    pub children: Vec<Rc<dyn Widget>>,
+    pub children: Vec<Rc<dyn WidgetI>>,
     pub flex: FlexLayout,
     valign: bool,
     halign: bool,
     gap: f64,
     pub(crate) scrollbar: Option<(ScrollBar, ScrollBar)>,
+    trigger: RefCell<Option<Rc<Trigger>>>,
 }
 impl Container {
     pub fn new() -> Self {
@@ -107,7 +108,7 @@ impl Container {
             return;
         }
 
-        let mut prev: Option<&Rc<dyn Widget>> = None;
+        let mut prev: Option<&Rc<dyn WidgetI>> = None;
 
         let mut row = 0;
         let mut col = 0;
@@ -196,7 +197,7 @@ impl Container {
             return;
         }
 
-        let mut prev: Option<&Rc<dyn Widget>> = None;
+        let mut prev: Option<&Rc<dyn WidgetI>> = None;
 
         let rows = self.children.len() as f64;
         let gaps_factor_col = self.gap * (rows - 1.0);
@@ -246,12 +247,12 @@ impl Container {
     }
     /// Pushs the layout of a child
     /// to be inside the parent
-    pub(crate) fn snap_to_parent(&self, child: &Rc<dyn Widget>) {
+    pub(crate) fn snap_to_parent(&self, child: &Rc<dyn WidgetI>) {
         let mut child_base = child.base_mut();
         child_base.layout.x = self.base.borrow().layout.x;
         child_base.layout.y = self.base.borrow().layout.y;
     }
-    pub fn add_widget<T: Widget + 'static>(&mut self, widget: T) {
+    pub fn add_widget<T: WidgetI + 'static>(&mut self, widget: T) {
         self.children.push(Rc::new(widget));
     }
 }

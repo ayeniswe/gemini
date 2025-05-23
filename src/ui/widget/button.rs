@@ -1,12 +1,16 @@
 use std::{
     any::Any,
     cell::{Ref, RefCell, RefMut},
+    rc::Rc,
     sync::Arc,
 };
 
-use crate::{action::Action, ui::sync::Thread};
+use crate::{
+    action::Action,
+    ui::sync::{Thread, Trigger},
+};
 
-use super::{impl_widget, BaseWidget, Widget};
+use super::{impl_widget, BaseWidget, Widget, WidgetI, WidgetInternal};
 /// A struct representing a button widget.
 ///
 /// The `Button` struct encapsulates a button UI element, typically used
@@ -21,6 +25,7 @@ pub struct Button {
     pub base: RefCell<BaseWidget>,
     pub actions: RefCell<Vec<Action>>,
     emitter: Option<Arc<dyn Thread>>,
+    trigger: RefCell<Option<Rc<Trigger>>>,
 }
 impl Button {
     pub fn new() -> Self {

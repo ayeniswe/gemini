@@ -9,7 +9,7 @@ use gemini::{
     ui::{
         color::{Color, BLACK, BLUE, GREEN, RED, WHITE},
         dom::DOM,
-        widget::{canvas::Canvas, Widget as _},
+        widget::{canvas::Canvas, Widget},
     },
 };
 use log::info;
@@ -32,24 +32,23 @@ fn main() {
     info!("Starting demo UI app...");
 
     let palette = Click::new(Rc::new(RefCell::new(Palette::new())))
-        .on(MouseButton::Left, |state, window, widget, event| {
-            dbg!(widget.style.color);
+        .on(MouseButton::Left, |state, trigger, widget, event| {
             widget.style.color = state.borrow().selected.into();
-            window.request_redraw();
+            trigger.update();
         })
-        .on(MouseButton::Right, |state, window, widget, event| {
+        .on(MouseButton::Right, |state, trigger, widget, event| {
             state.borrow_mut().selected = GREEN.into();
         });
 
     let cnv = Canvas::new()
         .set_width(512.0)
         .set_height(512.0)
-        .set_grid(8, 1.0, WHITE)
-        .on_action(Action::ZoomInOut(Zoom::new_with_bounds(
-            ZoomLevel::Zoom16x,
-            2,
-        )))
         .set_color(WHITE)
+        .set_grid(8, 1.0, WHITE)
+        // .on_action(Action::ZoomInOut(Zoom::new_with_bounds(
+        //     ZoomLevel::Zoom16x,
+        //     2,
+        // )))
         .set_cells_actions(vec![Action::Click(Box::new(palette))]);
 
     let mut d = DOM::new(640, 512);

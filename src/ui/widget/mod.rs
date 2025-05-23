@@ -16,6 +16,7 @@
 use std::{
     any::Any,
     cell::{Ref, RefMut},
+    rc::Rc,
     sync::Arc,
 };
 
@@ -26,7 +27,7 @@ use super::{
     layout::{Layout, Point},
     state::State,
     style::Style,
-    sync::Thread,
+    sync::{Thread, Trigger},
     text::Text,
 };
 
@@ -68,6 +69,18 @@ pub struct BaseWidget {
     pub state: State,
 }
 
+pub(crate) trait WidgetI: Widget + WidgetInternal {}
+
+/// A trait representing special
+/// internal methods known only to
+/// internal widget use.
+/// Basically the magic glue :).
+pub(crate) trait WidgetInternal {
+    /// Returns a internal cloned trigger for widget
+    fn internal_trigger(&self) -> Option<Rc<Trigger>>;
+    /// Returns a mutable internal trigger for widget
+    fn internal_trigger_mut(&self) -> RefMut<'_, Option<Rc<Trigger>>>;
+}
 /// A trait representing a basic UI component.
 ///
 /// Types that implement `Widget` can use fluent-style setters
@@ -76,7 +89,7 @@ pub struct BaseWidget {
 /// Widget MUST be polymorphic since at runtime we have no clue
 /// what widget could be used at the moment. Also to support one-offs
 /// with downcasting, we must use the dirty `Any` trait bounds :(
-pub trait Widget: Any {
+pub trait Widget: Any + WidgetInternal {
     /// Allows downcasting to concrete types by returning a reference to `Any`.
     fn as_any(&self) -> &dyn Any;
     /// Returns an immutable reference to the list of actions associated with the widget.
@@ -87,8 +100,15 @@ pub trait Widget: Any {
     fn base(&self) -> Ref<'_, BaseWidget>;
     /// Returns a mutable reference to the widget's base properties.
     fn base_mut(&self) -> RefMut<'_, BaseWidget>;
-    /// Returns the emitter
+    /// Returns an optional tied thread to run around this
+    /// widget. The thread is a user custom thread manager
+    /// that may exist
     fn emitter(&self) -> Option<&Arc<dyn Thread>>;
+    /// Returns a trigger to aid for this widget redraws
+    fn trigger(&self) -> Rc<Trigger> {
+        self.internal_trigger()
+            .expect("widget should be added to DOM")
+    }
     /// Set the inside text for the widget
     fn set_label(self, label: &str) -> Self
     where
@@ -225,6 +245,15 @@ macro_rules! impl_widget {
                 self
             }
         }
+        impl WidgetInternal for $type {
+            fn internal_trigger(&self) -> Option<Rc<Trigger>> {
+                self.trigger.borrow().clone()
+            }
+            fn internal_trigger_mut(&self) -> RefMut<'_, Option<Rc<Trigger>>> {
+                self.trigger.borrow_mut()
+            }
+        }
+        impl WidgetI for $type {}
     };
 }
 pub(crate) use impl_widget;
