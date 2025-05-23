@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use log::debug;
 use winit::{
     event::{Event, WindowEvent},
@@ -5,7 +7,9 @@ use winit::{
 };
 
 use crate::ui::{
-    color::{Color, ColorMode}, sync::Signal, widget::BaseWidget
+    color::{Color, ColorMode},
+    sync::{Signal, Trigger},
+    widget::BaseWidget,
 };
 
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -19,7 +23,12 @@ impl Hover {
             ..Default::default()
         }
     }
-    pub(crate) fn apply(&mut self, window: &Window, widget: &mut BaseWidget, event: Event<Signal>) {
+    pub(crate) fn apply(
+        &mut self,
+        trigger: Rc<Trigger>,
+        widget: &mut BaseWidget,
+        event: Event<Signal>,
+    ) {
         match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CursorMoved { position, .. } => {
@@ -35,10 +44,11 @@ impl Hover {
                                 .color
                                 .set_mode(ColorMode::Overlay(self.hover_color));
                         } else {
+                            debug!("triggered unhover for widget: {}", widget.id);
                             widget.style.color.set_mode(ColorMode::Solid);
                         }
 
-                        window.request_redraw()
+                        trigger.update()
                     }
                 }
                 _ => (),

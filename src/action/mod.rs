@@ -38,12 +38,12 @@ pub enum Action {
     ///
     /// Similiar to `onhover` in javascript
     Hover(Hover),
-    /// Allows the user to zoom in and out of this widget
-    ZoomInOut(Zoom),
     /// Allows the user to respond to clicks on the widget
     Click(Box<dyn ClickHandler>),
     /// Allows `Container` to be scrollable
     Scroll(Scroll),
+    // Allows the user to zoom in and out of this widget
+    // ZoomInOut(Zoom),
 }
 impl Action {
     pub(crate) fn apply_action(
@@ -54,16 +54,15 @@ impl Action {
         cursor_pos: PhysicalPosition<f64>,
     ) {
         match self {
-            // Action::Hover(hover) => hover.apply(window, &mut widget.base_mut(), event),
-            // Action::ZoomInOut(zoom) => zoom.apply(window, &mut widget.base_mut(), event),
-            // Action::Scroll(scroll) => scroll.apply(
-            //     window,
-            //     widget.as_any().downcast_ref::<Container>().unwrap(),
-            //     event,
-            //     cursor_pos,
-            // ),
+            Action::Hover(hover) => hover.apply(trigger, &mut widget.base_mut(), event),
+            Action::Scroll(scroll) => scroll.apply(
+                trigger,
+                widget.as_any().downcast_ref::<Container>().unwrap(),
+                event,
+                cursor_pos,
+            ),
             Action::Click(click) => click.apply(trigger, &mut widget.base_mut(), event),
-            _ => (),
+            // _ => (),
         }
     }
 }

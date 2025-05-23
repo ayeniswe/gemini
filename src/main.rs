@@ -3,13 +3,14 @@ use std::{cell::RefCell, rc::Rc};
 use gemini::{
     action::{
         click::Click,
+        hover::Hover,
         zoom::{Zoom, ZoomLevel},
         Action,
     },
     ui::{
-        color::{Color, BLACK, BLUE, GREEN, RED, WHITE},
+        color::{Color, BLACK, BLUE, GREEN, LIGHT_GRAY, RED, WHITE},
         dom::DOM,
-        widget::{canvas::Canvas, Widget},
+        widget::{canvas::Canvas, container::Container, heading::Heading, Widget},
     },
 };
 use log::info;
@@ -45,11 +46,10 @@ fn main() {
         .set_height(512.0)
         .set_color(WHITE)
         .set_grid(8, 1.0, WHITE)
-        // .on_action(Action::ZoomInOut(Zoom::new_with_bounds(
-        //     ZoomLevel::Zoom16x,
-        //     2,
-        // )))
-        .set_cells_actions(vec![Action::Click(Box::new(palette))]);
+        .set_cells_actions(vec![
+            Action::Hover(Hover::new(LIGHT_GRAY)),
+            Action::Click(Box::new(palette)),
+        ]);
 
     let mut d = DOM::new(640, 512);
     d.add_widget(cnv);

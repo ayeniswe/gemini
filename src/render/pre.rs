@@ -48,6 +48,8 @@ impl PreRenderer {
     }
     /// Adjust scrollbars
     fn adjust_scrolling(&self, widget: &Container) {
+        assert!(widget.children.len() > 0, "on_scroll() can not be used on an empty Container");
+
         if let Some(scrollbar) = &widget.scrollbar {
             let (x, y) = scrollbar;
             let widget_base = widget.base();
