@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use log::debug;
 use winit::{
     dpi::PhysicalPosition,
@@ -6,7 +8,7 @@ use winit::{
 };
 
 use crate::ui::{
-    sync::Signal,
+    sync::{Signal, Trigger},
     widget::{container::Container, Widget},
 };
 
@@ -20,7 +22,7 @@ enum Axis {
 /// The `Scroll` struct allows `Container`s to have the ability
 /// to respond to scroll movements on x or y axis
 #[derive(Clone, Default, Copy)]
-pub struct Scroll {
+pub(crate) struct Scroll {
     /// The current selected scrollbar
     axis: Option<Axis>,
     /// The `cursor_offset` is so the scrollbar moves in uniform with
@@ -66,9 +68,27 @@ impl Scroll {
 
         match self.axis {
             Some(Axis::X) => {
-                todo!();
+                let x_base = x.base();
 
-                // debug!("x scroll range - '{}' detected for widget: {}", true_scroll_range, widget_base.id);
+                let container_width = widget_base.layout.w + widget_base.layout.x;
+                let overflow_x = widget
+                    .children
+                    .iter()
+                    .fold(container_width, |acc, child| child.base().layout.w.max(acc));
+                let total_overflow = overflow_x - container_width;
+                let scrollbar_buffer = x_base.layout.w;
+                let total_scroll_range = container_width;
+                let true_scroll_range = total_scroll_range - scrollbar_buffer;
+                let content_offset = widget_base.layout.x;
+                let delta = total_overflow / (true_scroll_range - content_offset - y.buffer);
+
+                self.max_scroll_range = true_scroll_range;
+                self.scroll_delta = delta;
+
+                debug!(
+                    "x scroll range - '{}' detected for widget: {}",
+                    true_scroll_range, widget_base.id
+                );
             }
             Some(Axis::Y) => {
                 let y_base = y.base();
@@ -77,10 +97,10 @@ impl Scroll {
                 let last_child_base = last_child.base();
 
                 let overflow_y = last_child_base.layout.y + last_child_base.layout.h;
-                let container_width = widget_base.layout.h + widget_base.layout.y;
-                let total_overflow = overflow_y - container_width;
+                let container_height = widget_base.layout.h + widget_base.layout.y;
+                let total_overflow = overflow_y - container_height;
                 let scrollbar_buffer = y_base.layout.h;
-                let total_scroll_range = container_width;
+                let total_scroll_range = container_height;
                 let true_scroll_range = total_scroll_range - scrollbar_buffer;
                 let content_offset = widget_base.layout.y;
                 let delta = total_overflow / (true_scroll_range - content_offset - x.buffer);
@@ -122,7 +142,23 @@ impl Scroll {
 
         match self.axis {
             Some(Axis::X) => {
-                todo!()
+                let mut x_base = x.base_mut();
+                let widget_base = widget.base();
+
+                // Move scrollbar
+                x_base.layout.x =
+                    (pos.x - self.cursor_offset).clamp(widget_base.layout.x, self.max_scroll_range);
+
+                // Move container content
+                let shift = (x_base.layout.x - widget_base.layout.x) * self.scroll_delta;
+                for child in &widget.children {
+                    child.base_mut().offset.x = -shift;
+                }
+
+                debug!(
+                    "applying -{}px xshift offset to content for widget: {}",
+                    shift, widget_base.id
+                );
             }
             Some(Axis::Y) => {
                 let mut y_base = y.base_mut();
@@ -139,7 +175,7 @@ impl Scroll {
                 }
 
                 debug!(
-                    "applying -{}px shift offset to content for widget: {}",
+                    "applying -{}px yshift offset to content for widget: {}",
                     shift, widget_base.id
                 );
             }
@@ -148,7 +184,7 @@ impl Scroll {
     }
     pub(crate) fn apply(
         &mut self,
-        window: &Window,
+        trigger: Rc<Trigger>,
         widget: &Container,
         e: Event<Signal>,
         last_cursor_pos: PhysicalPosition<f64>,
@@ -158,7 +194,7 @@ impl Scroll {
                 WindowEvent::CursorMoved { position, .. } => {
                     if self.axis.is_some() {
                         self.on_scroll_movement(widget, position);
-                        window.request_redraw();
+                        trigger.update();
                     } else {
                         self.on_cursor_movement(widget, position);
                     }

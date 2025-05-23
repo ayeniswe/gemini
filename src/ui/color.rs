@@ -17,6 +17,7 @@ pub struct ColorState {
     mode: ColorMode,
 }
 impl ColorState {
+    /// Create a new solid `Color`
     pub(crate) fn new(color: Color) -> Self {
         Self {
             color,

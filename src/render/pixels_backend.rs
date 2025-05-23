@@ -7,10 +7,10 @@ use tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Rect, Transform};
 use crate::{
     render::Renderer,
     ui::{
-        color::{Color, BLACK, WHITE},
+        color::{Color, BLACK, TRANSPARENT, WHITE},
         layout::{Layout, Point},
         text::DEFAULT_FONT,
-        widget::{canvas::Canvas, container::Container, Widget},
+        widget::{canvas::Canvas, container::Container, Widget, WidgetI},
     },
 };
 
@@ -371,7 +371,7 @@ impl PixelsRenderer {
             );
         }
     }
-    fn draw(&mut self, widget: &Rc<dyn Widget>, clipping_region: Option<Layout>) {
+    fn draw(&mut self, widget: &Rc<dyn WidgetI>, clipping_region: Option<Layout>) {
         if let Some(widget) = widget.as_any().downcast_ref::<Container>() {
             self.draw_widget(widget, NO_CUSTOM, clipping_region);
 
@@ -423,16 +423,37 @@ impl PixelsRenderer {
     }
 }
 impl Renderer for PixelsRenderer {
+    fn dirty_clear(&mut self, x: f64, y: f64, h: f64, w: f64) {
+        let frame_width = self.pixels.texture().width();
+        let frame = self.pixels.frame_mut();
+
+        let color: [u8; 4] = TRANSPARENT.into();
+        for y in y as i32..(y + h).round() as i32 {
+            for x in x as i32..(x + w).round() as i32 {
+                // Ignore drawing pixels off screen
+                if x < 0 || y < 0 {
+                    continue;
+                }
+
+                // Row major layout follows this formula
+                let idx = row_major(x as u32, y as u32, frame_width);
+                if idx + 3 < frame.len() {
+                    frame[idx..idx + 4].copy_from_slice(&color);
+                }
+            }
+        }
+    }
     fn clear(&mut self) {
+        let color: [u8; 4] = TRANSPARENT.into();
         let frame = self.pixels.frame_mut();
         for pixel in frame.chunks_exact_mut(4) {
-            pixel.copy_from_slice(&[0, 0, 0, 255]);
+            pixel.copy_from_slice(&color);
         }
     }
     fn present(&mut self) {
         self.pixels.render().unwrap();
     }
-    fn draw(&mut self, widget: &Rc<dyn Widget>) {
+    fn draw(&mut self, widget: &Rc<dyn WidgetI>) {
         self.draw(widget, None);
     }
 }

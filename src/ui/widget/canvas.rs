@@ -1,6 +1,7 @@
 use std::{
     any::Any,
     cell::{Ref, RefCell, RefMut},
+    rc::Rc,
     sync::Arc,
 };
 
@@ -9,11 +10,11 @@ use crate::{
     ui::{
         color::Color,
         layout::{Col, Grid, Point, Row},
-        sync::Thread,
+        sync::{Thread, Trigger},
     },
 };
 
-use super::{impl_widget, BaseWidget, Widget};
+use super::{impl_widget, BaseWidget, Widget, WidgetI, WidgetInternal};
 
 /// A struct representing a canvas widget.
 ///
@@ -30,6 +31,7 @@ pub struct Canvas {
     pub actions: RefCell<Vec<Action>>,
     emitter: Option<Arc<dyn Thread>>,
     pub grid: RefCell<Option<Grid>>,
+    trigger: RefCell<Option<Rc<Trigger>>>,
 }
 impl Canvas {
     pub fn new() -> Self {

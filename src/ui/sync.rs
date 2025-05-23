@@ -6,7 +6,7 @@ use winit::event_loop::EventLoopProxy;
 
 use super::widget::BaseWidget;
 
-type UID = u64;
+pub(crate) type UID = usize;
 
 pub trait WidgetCallback: Fn(&mut BaseWidget) + Send + Sync + 'static {}
 impl<F: Fn(&mut BaseWidget) + Send + Sync + 'static> WidgetCallback for F {}
@@ -15,26 +15,27 @@ impl<F: Fn(&mut BaseWidget) + Send + Sync + 'static> WidgetCallback for F {}
 #[derive(Clone)]
 pub enum Signal {
     /// Callback to apply changes to a widget
-    Update((UID, Arc<dyn WidgetCallback>)),
+    Update(UID),
 }
 
 /// The `Trigger` struct allows the user to trigger interactions
 /// with the widgets on the UI main thread
+#[derive(Clone)]
 pub struct Trigger {
     proxy: Arc<Mutex<EventLoopProxy<Signal>>>,
-    uid: UID,
+    pub(crate) uid: UID,
 }
 impl Trigger {
     pub(crate) fn new(proxy: Arc<Mutex<EventLoopProxy<Signal>>>, uid: UID) -> Self {
         Self { proxy, uid }
     }
-    /// Triggers update to widget connection
-    pub fn trigger_update<F: WidgetCallback>(&self, callback: F) {
+    /// Triggers update to widget
+    pub fn update(&self) {
         let _ = self
             .proxy
             .lock()
             .unwrap()
-            .send_event(Signal::Update((self.uid, Arc::new(callback))));
+            .send_event(Signal::Update(self.uid));
     }
 }
 

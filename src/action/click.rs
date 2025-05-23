@@ -4,17 +4,20 @@ use dyn_clone::{clone_trait_object, DynClone};
 use log::debug;
 use winit::{
     event::{Event, MouseButton, WindowEvent},
-    window::Window,
 };
 
-use crate::ui::{sync::Signal, widget::BaseWidget};
+use crate::ui::{
+    sync::{Signal, Trigger},
+    widget::BaseWidget,
+};
 
 /// The `Click` struct allows widgets to have the ability
 /// to respond to any mouse click event
 #[derive(Clone)]
 pub struct Click<State> {
     state: State,
-    button_map: HashMap<MouseButton, Rc<dyn Fn(&mut State, &Window, &mut BaseWidget, Event<Signal>)>>,
+    button_map:
+        HashMap<MouseButton, Rc<dyn Fn(&mut State, Rc<Trigger>, &mut BaseWidget, Event<Signal>)>>,
 }
 impl<State> Click<State> {
     /// Create a new `Click` action
@@ -36,7 +39,7 @@ impl<State> Click<State> {
     /// - MiddleButton
     /// - BackButton
     /// - ForwardButton
-    pub fn on<F: Fn(&mut State, &Window, &mut BaseWidget, Event<Signal>) + Clone + 'static>(
+    pub fn on<F: Fn(&mut State, Rc<Trigger>, &mut BaseWidget, Event<Signal>) + Clone + 'static>(
         mut self,
         btn: MouseButton,
         callback: F,
@@ -46,7 +49,7 @@ impl<State> Click<State> {
     }
 }
 impl<State: Clone> ClickHandler for Click<State> {
-    fn apply(&mut self, window: &Window, widget: &mut BaseWidget, e: Event<Signal>) {
+    fn apply(&mut self, trigger: Rc<Trigger>, widget: &mut BaseWidget, e: Event<Signal>) {
         match e {
             Event::WindowEvent { ref event, .. } => match event {
                 WindowEvent::CursorMoved { position, .. } => {
@@ -57,7 +60,7 @@ impl<State: Clone> ClickHandler for Click<State> {
                         debug!("triggered {:?} button for widget: {}", button, widget.id);
                         let handler = self.button_map.get(&button);
                         if let Some(handler) = handler {
-                            handler(&mut self.state, window, widget, e)
+                            handler(&mut self.state, trigger, widget, e)
                         }
                     }
                 }
@@ -73,6 +76,6 @@ impl<State: Clone> ClickHandler for Click<State> {
 /// users to specify per button type
 /// click actions
 pub trait ClickHandler: DynClone {
-    fn apply(&mut self, window: &Window, widget: &mut BaseWidget, e: Event<Signal>);
+    fn apply(&mut self, trigger: Rc<Trigger>, widget: &mut BaseWidget, e: Event<Signal>);
 }
 clone_trait_object!(ClickHandler);

@@ -1,25 +1,30 @@
 use std::{
     any::Any,
     cell::{Ref, RefCell, RefMut},
+    rc::Rc,
     sync::Arc,
 };
 
-use crate::{action::Action, ui::sync::Thread};
+use crate::{
+    action::Action,
+    ui::sync::{Thread, Trigger},
+};
 
-use super::{impl_widget, BaseWidget, Widget};
+use super::{impl_widget, BaseWidget, Widget, WidgetI, WidgetInternal};
 
 /// A struct representing a heading widget.
 ///
 /// The `Heading` struct represents a heading h1 h2 h3 UI element, typically used
-/// for header above section. 
-/// 
-/// The `Heading` struct includes extra functionalities specific to 
+/// for header above section.
+///
+/// The `Heading` struct includes extra functionalities specific to
 /// headings
 #[derive(Default, Clone)]
 pub struct Heading {
     pub base: RefCell<BaseWidget>,
     pub actions: RefCell<Vec<Action>>,
     emitter: Option<Arc<dyn Thread>>,
+    trigger: RefCell<Option<Rc<Trigger>>>,
 }
 impl Heading {
     pub fn new() -> Self {

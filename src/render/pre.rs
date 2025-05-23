@@ -1,4 +1,4 @@
-use crate::ui::widget::{canvas::Canvas, container::Container, Widget};
+use crate::ui::widget::{canvas::Canvas, container::Container, Widget, WidgetI};
 use std::rc::Rc;
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -9,7 +9,7 @@ impl PreRenderer {
     }
     /// Adjust text layout of widgets based on
     /// user settings
-    fn adjust_text_layout(&self, widget: &Rc<dyn Widget>) {
+    fn adjust_text_layout(&self, widget: &Rc<dyn WidgetI>) {
         let mut widget_base = widget.base_mut();
 
         if !widget_base.text.label.is_empty() {
@@ -48,6 +48,8 @@ impl PreRenderer {
     }
     /// Adjust scrollbars
     fn adjust_scrolling(&self, widget: &Container) {
+        assert!(widget.children.len() > 0, "on_scroll() can not be used on an empty Container");
+
         if let Some(scrollbar) = &widget.scrollbar {
             let (x, y) = scrollbar;
             let widget_base = widget.base();
@@ -93,7 +95,7 @@ impl PreRenderer {
     }
     /// Make all adjustments
     /// that must propagate first
-    fn adjust_children(&self, widget: &Rc<dyn Widget>) {
+    fn adjust_children(&self, widget: &Rc<dyn WidgetI>) {
         self.adjust_text_layout(widget);
 
         if let Some(widget) = widget.as_any().downcast_ref::<Container>() {
@@ -108,7 +110,7 @@ impl PreRenderer {
     ///
     /// Some actions user selects could trigger mutation
     /// of surrounding widgets or attributes
-    pub(crate) fn adjust(&self, widget: &Rc<dyn Widget>) {
+    pub(crate) fn adjust(&self, widget: &Rc<dyn WidgetI>) {
         self.adjust_children(widget);
 
         if let Some(widget) = widget.as_any().downcast_ref::<Container>() {

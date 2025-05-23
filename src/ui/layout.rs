@@ -47,7 +47,12 @@ impl Layout {
         (self.w - rhs) / 2.0
     }
 }
-
+impl From<Layout> for (f64, f64, f64, f64) {
+    /// Output as `(x, y, h, w)`
+    fn from(value: Layout) -> Self {
+        (value.x, value.y, value.h, value.w)
+    }
+}
 /// The `Point` struct defines a simple x and y coordinates
 #[derive(Default, Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Point {
@@ -105,10 +110,15 @@ impl Grid {
             cells,
             thickness,
             color,
+            ..Default::default()
         }
     }
     /// Resize grid to meet the dimensions of
     /// `height x width` also account for pos `x` and `y` offset
+    ///
+    /// NOTE
+    ///
+    /// locked to only be called once until dirty render is implemented
     pub(crate) fn resize(&mut self, x: f64, y: f64, height: f64, width: f64) {
         let h_cell_size = height / self.size.y;
         let w_cell_size = width / self.size.x;

@@ -1,15 +1,19 @@
 use std::{
     any::Any,
     cell::{Ref, RefCell, RefMut},
+    rc::Rc,
     sync::Arc,
 };
 
 use crate::{
     action::Action,
-    ui::{color::LIGHT_GRAY, sync::Thread},
+    ui::{
+        color::LIGHT_GRAY,
+        sync::{Thread, Trigger},
+    },
 };
 
-use super::{impl_widget, BaseWidget, Widget};
+use super::{impl_widget, BaseWidget, Widget, WidgetI, WidgetInternal};
 
 /// Scrollbar thickness
 const SCROLLBAR_SIZE: f64 = 10.0;
@@ -25,6 +29,7 @@ pub struct ScrollBar {
     pub actions: RefCell<Vec<Action>>,
     emitter: Option<Arc<dyn Thread>>,
     pub(crate) buffer: f64,
+    trigger: RefCell<Option<Rc<Trigger>>>,
 }
 impl ScrollBar {
     /// Create a new `Scrollbar` on the y-axis
