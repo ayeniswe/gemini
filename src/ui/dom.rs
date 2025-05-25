@@ -171,13 +171,12 @@ impl DOM {
             })
             .unwrap();
     }
-    pub fn add_widget<T: WidgetI + 'static>(&mut self, widget: T) {
+    fn add_widgets(&mut self, widget: Rc<dyn WidgetI>) {
         // Attach trigger to allow user to trigger redraws on this widget
         // later
         let uid: UID = rand::thread_rng().gen();
         *widget.internal_trigger_mut() = Some(Rc::new(Trigger::new(self.proxy.clone(), uid)));
 
-        let widget: Rc<dyn WidgetI> = Rc::new(widget);
         self.nodes_ref.insert(uid, widget.clone());
         self.nodes.push(widget.clone());
 
@@ -195,14 +194,14 @@ impl DOM {
             }
         } else if let Some(container) = widget.as_any().downcast_ref::<Container>() {
             for child in &container.children {
-                let uid: UID = rand::thread_rng().gen();
-                *child.internal_trigger_mut() =
-                    Some(Rc::new(Trigger::new(self.proxy.clone(), uid)));
-                self.nodes_ref.insert(uid, child.clone());
+                self.add_widgets(child.clone());
             }
         }
 
         // Auto-start any emitters for widgets
         self.apply_emitters(&widget);
+    }
+    pub fn add_widget<T: WidgetI + 'static>(&mut self, widget: T) {
+        self.add_widgets(Rc::new(widget));
     }
 }
