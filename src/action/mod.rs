@@ -9,18 +9,19 @@
 
 use std::rc::Rc;
 
-use click::ClickHandler;
+use dyn_clone::{clone_trait_object, DynClone};
 use hover::Hover;
 use scroll::Scroll;
-use winit::{dpi::PhysicalPosition, event::Event, window::Window};
+use winit::{dpi::PhysicalPosition, event::Event};
 use zoom::Zoom;
 
 use crate::ui::{
     sync::{Signal, Trigger},
-    widget::{container::Container, Widget, WidgetI},
+    widget::{container::Container, BaseWidget, WidgetI},
 };
 
 pub mod click;
+pub mod cursor;
 pub mod hover;
 pub(crate) mod scroll;
 pub mod zoom;
@@ -39,7 +40,9 @@ pub enum Action {
     /// Similiar to `onhover` in javascript
     Hover(Hover),
     /// Allows the user to respond to clicks on the widget
-    Click(Box<dyn ClickHandler>),
+    Click(Box<dyn ActionHandler>),
+    /// Allows the user to respond to mouse movement on the widget
+    CursorMove(Box<dyn ActionHandler>),
     /// Allows `Container` to be scrollable
     Scroll(Scroll),
     // Allows the user to zoom in and out of this widget
@@ -62,7 +65,19 @@ impl Action {
                 cursor_pos,
             ),
             Action::Click(click) => click.apply(trigger, &mut widget.base_mut(), event),
+            Action::CursorMove(cursor_move) => {
+                cursor_move.apply(trigger, &mut widget.base_mut(), event)
+            }
             // _ => (),
         }
     }
 }
+
+/// The trait `ActionHandler` provides a
+/// way for ergonomic use for
+/// users to specify actions with states at
+/// runtime
+pub trait ActionHandler: DynClone {
+    fn apply(&mut self, trigger: Rc<Trigger>, widget: &mut BaseWidget, e: Event<Signal>);
+}
+clone_trait_object!(ActionHandler);
