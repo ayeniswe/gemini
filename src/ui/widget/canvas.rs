@@ -77,7 +77,7 @@ impl Canvas {
     /// # Panics
     ///
     /// This function will panic if `Canvas` never called `set_width` or `set_height`
-    pub fn set_cells_actions(self, actions: Vec<Action>) -> Self {
+    pub fn on_cells_actions(self, actions: Vec<Action>) -> Self {
         if let Some(grid) = &*self.grid.borrow_mut() {
             for y in 0..grid.size.y as usize {
                 for x in 0..grid.size.x as usize {
@@ -112,7 +112,7 @@ impl Canvas {
     /// This function will panic:
     /// - If `Canvas` never called `set_width` or `set_height`
     /// - If `pos` does not exist
-    pub fn set_cell_action(self, pos: (Row, Col), action: Action) -> Self {
+    pub fn on_cell_action(self, pos: (Row, Col), action: Action) -> Self {
         if let Some(grid) = &*self.grid.borrow_mut() {
             let cell = &grid.cells[pos.0][pos.1];
             cell.action_mut().push(action);

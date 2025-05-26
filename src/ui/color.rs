@@ -36,7 +36,7 @@ impl ColorState {
 impl From<ColorState> for Color {
     fn from(value: ColorState) -> Self {
         match value.mode {
-            ColorMode::Solid => value.color,
+            ColorMode::Solid | ColorMode::None => value.color,
             ColorMode::Overlay(color) => Color::blend(value.color, color),
         }
     }
@@ -58,6 +58,17 @@ pub(crate) enum ColorMode {
     Solid,
     /// Blends the base color with an overlay color.
     Overlay(Color),
+    /// Ignores this color as if it was nonexistent.
+    None,
+}
+
+/// Makes a color nonexistent useful for when a color
+/// need to show but needs a way to be ignored logically
+/// for some reason
+pub fn none(color: Color) -> ColorState {
+    let mut c = ColorState::new(color);
+    c.set_mode(ColorMode::None);
+    c
 }
 
 /// Represents an RGB color using 8-bit red, green, and blue components.
