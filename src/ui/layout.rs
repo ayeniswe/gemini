@@ -157,7 +157,7 @@ impl Grid {
     ///
     /// Callback receives the 2D indices pos `Point` as well as
     /// the concrete Cell instance
-    pub(crate) fn on_cell<F: FnMut(Point, Rc<Cell>)>(&self, mut callback: F) {
+    pub fn on_cell<F: FnMut(Point, Rc<Cell>)>(&self, mut callback: F) {
         for y in 0..self.size.y as usize {
             for x in 0..self.size.x as usize {
                 let cell = self.cells[y][x].clone();

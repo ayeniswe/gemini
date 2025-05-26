@@ -69,7 +69,7 @@ pub struct BaseWidget {
     pub state: State,
 }
 
-pub(crate) trait WidgetI: Widget + WidgetInternal {}
+pub trait WidgetI: Widget + WidgetInternal {}
 
 /// A trait representing special
 /// internal methods known only to
