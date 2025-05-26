@@ -161,6 +161,21 @@ impl DOM {
 
                             debug!("redrawing widget: {}", &widget.base().id);
                         }
+                        Signal::Callback(sig) => {
+                            let (id, func) = sig;
+                            let widget = self.nodes_ref.get(id).unwrap();
+
+                            func(widget.clone());
+
+                            let (x, y, h, w) = widget.base().layout.into();
+                            self.renderer.dirty_clear(x, y, h, w);
+
+                            self.renderer.draw(widget);
+
+                            self.renderer.present();
+
+                            debug!("callback then redrawing widget: {}", &widget.base().id);
+                        }
                     },
                     _ => (),
                 }
@@ -197,11 +212,10 @@ impl DOM {
                 self.add_widgets(child.clone());
             }
         }
-
-        // Auto-start any emitters for widgets
-        self.apply_emitters(&widget);
     }
     pub fn add_widget<T: WidgetI + 'static>(&mut self, widget: T) {
-        self.add_widgets(Rc::new(widget));
+        let widget: Rc<dyn WidgetI> = Rc::new(widget);
+        self.add_widgets(widget.clone());
+        self.apply_emitters(&widget);
     }
 }

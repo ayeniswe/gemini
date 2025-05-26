@@ -1,21 +1,25 @@
 use std::{
+    rc::Rc,
     sync::{Arc, Mutex},
     thread,
 };
 use winit::event_loop::EventLoopProxy;
 
-use super::widget::BaseWidget;
+use super::widget::WidgetI;
 
 pub(crate) type UID = usize;
 
-pub trait WidgetCallback: Fn(&mut BaseWidget) + Send + Sync + 'static {}
-impl<F: Fn(&mut BaseWidget) + Send + Sync + 'static> WidgetCallback for F {}
+pub trait WidgetCallback: Fn(Rc<dyn WidgetI>) + Send + Sync + 'static {}
+impl<F: Fn(Rc<dyn WidgetI>) + Send + Sync + 'static> WidgetCallback for F {}
 
 /// `EventLoopProxy` user events
 #[derive(Clone)]
 pub enum Signal {
-    /// Callback to apply changes to a widget
+    /// Redraw widget
     Update(UID),
+    /// Callback to apply changes to a widget
+    /// before redrawing
+    Callback((UID, Arc<dyn WidgetCallback>)),
 }
 
 /// The `Trigger` struct allows the user to trigger interactions
@@ -37,6 +41,15 @@ impl Trigger {
             .unwrap()
             .send_event(Signal::Update(self.uid));
     }
+    /// Triggers callback on widget before
+    /// updating
+    pub fn update_callback<F: WidgetCallback>(&self, callback: F) {
+        let _ = self
+            .proxy
+            .lock()
+            .unwrap()
+            .send_event(Signal::Callback((self.uid, Arc::new(callback))));
+    }
 }
 
 /// The `Thread` defines anything that has the ability
@@ -46,12 +59,11 @@ pub(crate) trait Thread {
 }
 
 /// The `Emitter` trait allows user to customize
-/// trigger actions to take place when a widget
-/// gets a `Signal`
+/// trigger actions to take place in a seperate thread
 pub trait Emitter: Send + Sync + 'static {
     /// When the `Emitter` thread starts this `run` method gets called
     /// wrapped by its own thread
-    fn run(&self, trigger: Trigger);
+    fn run(self: Arc<Self>, trigger: Trigger);
 }
 impl<E: Emitter> Thread for E {
     fn start(self: Arc<Self>, trigger: Trigger) {
@@ -63,7 +75,7 @@ impl<E: Emitter> Thread for E {
 impl<E: Emitter> Thread for Arc<E> {
     fn start(self: Arc<Self>, trigger: Trigger) {
         let _ = thread::spawn(move || {
-            self.run(trigger);
+            <Arc<E> as Clone>::clone(&self).run(trigger);
         });
     }
 }
