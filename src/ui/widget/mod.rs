@@ -197,7 +197,7 @@ pub trait Widget: Any + WidgetInternal {
         self.base_mut().text.halign = true;
         self
     }
-    /// Add s trigger action for the widget
+    /// Sets a trigger action for the widget
     ///
     /// See `Action` enum for the types of actions avaliable
     fn on_action(self, action: Action) -> Self
