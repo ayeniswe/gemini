@@ -82,7 +82,7 @@ impl Canvas {
             for y in 0..grid.size.y as usize {
                 for x in 0..grid.size.x as usize {
                     let cell = &grid.cells[y][x];
-                    cell.base_mut().id = format!("{},{}", x, y);
+                    cell.base_mut().id = format!("{},{}", y, x);
                     for action in actions.iter().cloned() {
                         cell.action_mut().push(action);
                     }
