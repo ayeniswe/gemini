@@ -199,9 +199,6 @@ impl Container {
 
         let mut prev: Option<&Rc<dyn WidgetI>> = None;
 
-        let rows = self.children.len() as f64;
-        let gaps_factor_col = self.gap * (rows - 1.0);
-
         for child in self.children.iter() {
             self.snap_to_parent(child);
 
@@ -222,13 +219,7 @@ impl Container {
             if self.valign {
                 let new_y = {
                     let child_base = child.base();
-
-                    // The possibility of other rows spaces being filled
-                    let rows_max_spacing = child_base.layout.h * rows;
-                    // The full total spacing a grid column could take
-                    let max_col_spacing = rows_max_spacing + gaps_factor_col;
-
-                    self.base().layout.vertical_center(max_col_spacing)
+                    self.base().layout.vertical_center(child_base.layout.h)
                 };
                 child.base_mut().layout.y = new_y;
             }
